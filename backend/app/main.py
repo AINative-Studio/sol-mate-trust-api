@@ -1,0 +1,62 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+
+from .core.config import settings
+from .core.database import engine, Base
+
+# Import all models to ensure they're registered
+from .models import *  # noqa
+
+from .api import (
+    users, personas, rooms, stakes, matches,
+    attestations, social_reputation, safety, match_agent,
+)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create tables on startup (use Alembic migrations in production)
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    description="Sol Mate — Social trust backend: stake-to-interact, AI matchmaking, meetup attestations, safety escrow",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Register routers
+app.include_router(users.router)
+app.include_router(personas.router)
+app.include_router(rooms.router)
+app.include_router(stakes.router)
+app.include_router(matches.router)
+app.include_router(attestations.router)
+app.include_router(social_reputation.router)
+app.include_router(safety.router)
+app.include_router(match_agent.router)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "service": settings.APP_NAME, "version": settings.APP_VERSION}
+
+
+@app.get("/")
+async def root():
+    return {
+        "service": "Sol Mate Trust API",
+        "docs": "/docs",
+        "health": "/health",
+    }
