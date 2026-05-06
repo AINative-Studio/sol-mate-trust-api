@@ -3,10 +3,10 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-sol_mate_escrow = "SoLMateEsCrowXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+sol_mate_escrow = "GihCjDJeAwbNtr826dEAfQFp4GAVBgHWLxDf2sqsQLif"
 
 [programs.devnet]
-sol_mate_escrow = "SoLMateEsCrowXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+sol_mate_escrow = "GihCjDJeAwbNtr826dEAfQFp4GAVBgHWLxDf2sqsQLif"
 
 [registry]
 url = "https://api.apr.dev"

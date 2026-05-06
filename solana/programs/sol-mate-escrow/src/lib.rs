@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-declare_id!("SoLMateEsCrowXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+declare_id!("GihCjDJeAwbNtr826dEAfQFp4GAVBgHWLxDf2sqsQLif");
 
 /// Sol Mate Safety Escrow Program
 ///
@@ -83,6 +83,12 @@ pub mod sol_mate_escrow {
     /// Refund stake back to user after successful meetup attestation.
     /// Only callable by the backend authority.
     pub fn refund(ctx: Context<Release>) -> Result<()> {
+        // Collect account infos before mutable borrow of stake_vault
+        let vault_account_info = ctx.accounts.stake_vault.to_account_info();
+        let token_program_info = ctx.accounts.token_program.to_account_info();
+        let vault_ata_info = ctx.accounts.vault_ata.to_account_info();
+        let staker_ata_info = ctx.accounts.staker_ata.to_account_info();
+
         let vault = &mut ctx.accounts.stake_vault;
         require!(
             vault.status == StakeStatus::Active,
@@ -90,6 +96,8 @@ pub mod sol_mate_escrow {
         );
 
         let amount = vault.amount;
+        let staker = vault.staker;
+        let room_id = vault.room_id;
         vault.status = StakeStatus::Refunded;
         vault.resolved_at = Some(Clock::get()?.unix_timestamp);
 
@@ -103,11 +111,11 @@ pub mod sol_mate_escrow {
         let signer = &[seeds];
 
         let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
+            token_program_info,
             Transfer {
-                from: ctx.accounts.vault_ata.to_account_info(),
-                to: ctx.accounts.staker_ata.to_account_info(),
-                authority: ctx.accounts.stake_vault.to_account_info(),
+                from: vault_ata_info,
+                to: staker_ata_info,
+                authority: vault_account_info,
             },
             signer,
         );
@@ -117,11 +125,7 @@ pub mod sol_mate_escrow {
         authority.total_refunded = authority.total_refunded.checked_add(amount)
             .ok_or(EscrowError::Overflow)?;
 
-        emit!(StakeRefunded {
-            staker: vault.staker,
-            room_id: vault.room_id,
-            amount,
-        });
+        emit!(StakeRefunded { staker, room_id, amount });
         Ok(())
     }
 
@@ -134,6 +138,13 @@ pub mod sol_mate_escrow {
         reason: SlashReason,
     ) -> Result<()> {
         require!(slash_bps <= 10_000, EscrowError::InvalidSlashBps);
+
+        // Collect account infos before mutable borrow of stake_vault
+        let vault_account_info = ctx.accounts.stake_vault.to_account_info();
+        let token_program_info = ctx.accounts.token_program.to_account_info();
+        let vault_ata_info = ctx.accounts.vault_ata.to_account_info();
+        let staker_ata_info = ctx.accounts.staker_ata.to_account_info();
+        let safety_fund_ata_info = ctx.accounts.safety_fund_ata.to_account_info();
 
         let vault = &mut ctx.accounts.stake_vault;
         require!(
@@ -149,6 +160,8 @@ pub mod sol_mate_escrow {
         let refund_amount = total.checked_sub(slash_amount)
             .ok_or(EscrowError::Overflow)?;
 
+        let staker = vault.staker;
+        let room_id = vault.room_id;
         vault.status = StakeStatus::Slashed;
         vault.resolved_at = Some(Clock::get()?.unix_timestamp);
 
@@ -163,11 +176,11 @@ pub mod sol_mate_escrow {
         // Send slashed portion to safety fund
         if slash_amount > 0 {
             let cpi_slash = CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
+                token_program_info.clone(),
                 Transfer {
-                    from: ctx.accounts.vault_ata.to_account_info(),
-                    to: ctx.accounts.safety_fund_ata.to_account_info(),
-                    authority: ctx.accounts.stake_vault.to_account_info(),
+                    from: vault_ata_info.clone(),
+                    to: safety_fund_ata_info,
+                    authority: vault_account_info.clone(),
                 },
                 signer,
             );
@@ -177,11 +190,11 @@ pub mod sol_mate_escrow {
         // Return remainder to staker
         if refund_amount > 0 {
             let cpi_return = CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
+                token_program_info,
                 Transfer {
-                    from: ctx.accounts.vault_ata.to_account_info(),
-                    to: ctx.accounts.staker_ata.to_account_info(),
-                    authority: ctx.accounts.stake_vault.to_account_info(),
+                    from: vault_ata_info,
+                    to: staker_ata_info,
+                    authority: vault_account_info,
                 },
                 signer,
             );
@@ -193,8 +206,8 @@ pub mod sol_mate_escrow {
             .ok_or(EscrowError::Overflow)?;
 
         emit!(StakeSlashed {
-            staker: vault.staker,
-            room_id: vault.room_id,
+            staker,
+            room_id,
             slash_amount,
             refund_amount,
             slash_bps,
