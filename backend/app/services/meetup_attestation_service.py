@@ -10,6 +10,7 @@ from ..models.user import User
 from ..schemas.attestation import AttestationInitiate, AttestationConfirm
 from ..core.errors import AttestationError
 from .social_reputation_service import SocialReputationService
+from .hcs_anchoring_service import HCSAnchoringService
 
 
 class MeetupAttestationService:
@@ -100,6 +101,19 @@ class MeetupAttestationService:
             rep_svc.record_meetup_completed(attestation.initiator_user_id)
         if attestation.counterparty_user_id:
             rep_svc.record_meetup_completed(attestation.counterparty_user_id)
+
+        # Anchor to Hedera HCS for immutable auditability
+        hcs_msg_id = HCSAnchoringService().anchor_attestation(
+            attestation_id=attestation.id,
+            match_id=attestation.match_id,
+            initiator_user_id=attestation.initiator_user_id,
+            counterparty_user_id=attestation.counterparty_user_id,
+            method=attestation.method.value if attestation.method else "unknown",
+            gps_lat=attestation.latitude,
+            gps_lng=attestation.longitude,
+        )
+        if hcs_msg_id:
+            attestation.hcs_message_id = hcs_msg_id
 
     def _get_or_404(self, attestation_id: UUID) -> MeetupAttestation:
         a = self.db.query(MeetupAttestation).filter(MeetupAttestation.id == attestation_id).first()

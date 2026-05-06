@@ -4,7 +4,7 @@ import uuid
 from typing import Optional
 
 
-# In-memory store for hackathon; swap for ZeroDB table in prod.
+# In-memory store for hackathon; ZeroDB used for durable persistence when configured.
 _queue: list[dict] = []
 
 
@@ -16,6 +16,9 @@ class ModerationQueueService:
         report_id: UUID,
         severity: str,
         auto_action: Optional[str] = None,
+        reported_user_id: Optional[UUID] = None,
+        category: str = "unknown",
+        description: str = "",
     ) -> dict:
         item = {
             "id": str(uuid.uuid4()),
@@ -29,6 +32,21 @@ class ModerationQueueService:
             "resolved_at": None,
         }
         _queue.append(item)
+
+        # Best-effort durable persistence via ZeroDB
+        if reported_user_id:
+            try:
+                from .zerodb_client import ZeroDBClient
+                ZeroDBClient().enqueue_moderation_item(
+                    item_id=uuid.UUID(item["id"]),
+                    category=category,
+                    severity=severity,
+                    description=description,
+                    reported_user_id=reported_user_id,
+                )
+            except Exception:
+                pass  # Never block on ZeroDB
+
         return item
 
     def get_pending(self, limit: int = 20) -> list[dict]:

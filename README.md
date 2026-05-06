@@ -183,7 +183,7 @@ cd backend
 pytest tests/ -v --cov=app --cov-report=term-missing
 ```
 
-**182 tests, 87% coverage.**
+**198 tests, 87% coverage.**
 
 | Area | Tests | Coverage |
 |------|-------|----------|
@@ -212,18 +212,149 @@ pytest tests/ -v --cov=app --cov-report=term-missing
 
 ---
 
+## Running Locally — API Keys Setup
+
+Sol Mate is designed to run without external API keys in development. All third-party integrations (Circle, Hedera, ZeroDB) **gracefully no-op** when credentials are missing — the API still starts and all tests pass.
+
+### Minimum setup (no external services)
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with just these two required values:
+
+```env
+# Required — always
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/solmate
+SECRET_KEY=any-random-string-at-least-32-chars
+
+# Optional — app starts fine without these
+```
+
+That's it. Wallet auth, rooms, matching, AI scoring, and all 198 tests work without any third-party keys.
+
+---
+
+### Optional integrations
+
+Each integration below adds a real capability. Skip any you don't need.
+
+#### Solana (on-chain stake/escrow)
+Get a devnet keypair at https://solana.com/developers
+
+```env
+SOLANA_RPC_URL=https://api.devnet.solana.com
+SOLANA_PROGRAM_ID=<from: cd solana && bash scripts/deploy_devnet.sh>
+```
+
+#### Circle USDC (real money movement)
+Sign up at https://developer.circle.com — use the sandbox for free testing.
+
+```env
+CIRCLE_API_KEY=TEST_API_KEY:...          # from circle.com/developers
+CIRCLE_ENVIRONMENT=sandbox               # or "production"
+CIRCLE_ESCROW_WALLET_ID=<wallet-id>      # your Circle escrow wallet
+CIRCLE_SAFETY_FUND_WALLET_ID=<wallet-id> # your Circle safety fund wallet
+```
+
+> Without these, stake create/refund/slash still work — Circle calls log a debug message and return a `stub` result.
+
+#### Hedera HCS (immutable audit trail)
+Sign up at https://portal.hedera.com — testnet accounts are free.
+
+```env
+HEDERA_ACCOUNT_ID=0.0.XXXXXX
+HEDERA_PRIVATE_KEY=302e...               # ED25519 private key from portal
+HEDERA_TOPIC_ID=0.0.XXXXXX              # create via: hedera topic create
+HEDERA_NETWORK=testnet                  # or "mainnet"
+```
+
+> Without these, attestation anchoring and safety audit calls are silently skipped. The `hcs_message_id` field stays null on attestations.
+
+#### ZeroDB (vector memory for AI matching)
+Get a free API key at https://ainative.studio
+
+```env
+ZERODB_API_KEY=<your-key>
+ZERODB_PROJECT_ID=<your-project-id>
+ZERODB_API_URL=https://api.ainative.studio  # default
+```
+
+> Without these, preference embeddings are stored only in Postgres (the built-in bag-of-words scoring still works). Semantic search across all users won't be available.
+
+#### OpenAI (enhanced intro generation)
+```env
+OPENAI_API_KEY=sk-...
+```
+
+> Without this, the AI intro generator uses the built-in template engine.
+
+---
+
+### Full `.env` reference
+
+```env
+# ── Required ──────────────────────────────────────────────────────────────────
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/solmate
+SECRET_KEY=change-me-to-a-long-random-secret
+
+# ── Solana ────────────────────────────────────────────────────────────────────
+SOLANA_RPC_URL=https://api.devnet.solana.com
+SOLANA_PROGRAM_ID=
+
+# ── Circle USDC ───────────────────────────────────────────────────────────────
+CIRCLE_API_KEY=
+CIRCLE_ENVIRONMENT=sandbox
+CIRCLE_ESCROW_WALLET_ID=
+CIRCLE_SAFETY_FUND_WALLET_ID=
+
+# ── Hedera HCS ────────────────────────────────────────────────────────────────
+HEDERA_ACCOUNT_ID=
+HEDERA_PRIVATE_KEY=
+HEDERA_TOPIC_ID=
+HEDERA_NETWORK=testnet
+
+# ── ZeroDB ────────────────────────────────────────────────────────────────────
+ZERODB_API_KEY=
+ZERODB_PROJECT_ID=
+ZERODB_API_URL=https://api.ainative.studio
+
+# ── OpenAI (optional) ─────────────────────────────────────────────────────────
+OPENAI_API_KEY=
+
+# ── Stake thresholds (USDC) ───────────────────────────────────────────────────
+MIN_STAKE_ROOM_USDC=1.0
+MIN_STAKE_MEETUP_USDC=2.0
+MIN_STAKE_DM_USDC=0.5
+
+# ── Celery / Redis (for background workers) ───────────────────────────────────
+REDIS_URL=redis://localhost:6379/0
+```
+
+---
+
 ## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | Postgres connection string |
-| `SECRET_KEY` | JWT signing secret |
-| `SOLANA_RPC_URL` | Solana RPC (devnet: `https://api.devnet.solana.com`) |
-| `SOLANA_PROGRAM_ID` | Deployed escrow program ID |
-| `CIRCLE_API_KEY` | Circle USDC API key |
-| `HEDERA_ACCOUNT_ID` | Hedera operator account |
-| `HEDERA_PRIVATE_KEY` | Hedera operator private key |
-| `ZERODB_API_KEY` | ZeroDB vector memory API key |
-| `MIN_STAKE_ROOM_ENTRY` | Minimum stake for room entry (default: 1.0 USDC) |
-| `MIN_STAKE_MATCH_REQUEST` | Minimum stake for match request (default: 2.0 USDC) |
-| `MIN_STAKE_DM_UNLOCK` | Minimum stake for DM unlock (default: 0.5 USDC) |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | **Yes** | Postgres connection string |
+| `SECRET_KEY` | **Yes** | JWT signing secret (32+ chars) |
+| `SOLANA_RPC_URL` | No | Solana RPC endpoint |
+| `SOLANA_PROGRAM_ID` | No | Deployed escrow program address |
+| `CIRCLE_API_KEY` | No | Circle USDC API key (sandbox or prod) |
+| `CIRCLE_ENVIRONMENT` | No | `sandbox` or `production` (default: sandbox) |
+| `CIRCLE_ESCROW_WALLET_ID` | No | Circle wallet ID for escrow holds |
+| `CIRCLE_SAFETY_FUND_WALLET_ID` | No | Circle wallet ID for slashed funds |
+| `HEDERA_ACCOUNT_ID` | No | Hedera operator account (e.g. `0.0.12345`) |
+| `HEDERA_PRIVATE_KEY` | No | Hedera ED25519 private key |
+| `HEDERA_TOPIC_ID` | No | HCS topic ID for audit logs |
+| `HEDERA_NETWORK` | No | `testnet` or `mainnet` (default: testnet) |
+| `ZERODB_API_KEY` | No | ZeroDB vector memory API key |
+| `ZERODB_PROJECT_ID` | No | ZeroDB project identifier |
+| `ZERODB_API_URL` | No | ZeroDB base URL (default: `https://api.ainative.studio`) |
+| `OPENAI_API_KEY` | No | OpenAI key for enhanced intro generation |
+| `REDIS_URL` | No | Redis URL for Celery workers (default: `redis://localhost:6379/0`) |
+| `MIN_STAKE_ROOM_USDC` | No | Min USDC stake for room entry (default: 1.0) |
+| `MIN_STAKE_MEETUP_USDC` | No | Min USDC stake for meetup request (default: 2.0) |
+| `MIN_STAKE_DM_USDC` | No | Min USDC stake to unlock DMs (default: 0.5) |

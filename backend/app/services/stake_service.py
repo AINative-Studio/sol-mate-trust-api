@@ -9,6 +9,8 @@ from ..models.user import User
 from ..schemas.stake import StakeCreate
 from ..core.config import settings
 from ..core.errors import StakeNotFoundError, InsufficientStakeError
+from .circle_service import CircleService
+from .hcs_anchoring_service import HCSAnchoringService
 
 
 class StakeService:
@@ -41,8 +43,11 @@ class StakeService:
         self.db.add(stake)
         self.db.commit()
         self.db.refresh(stake)
-        # TODO: circle_service.debit(user_wallet=user.wallet_address, amount=payload.amount_usdc)
-        # Interface: CircleService.debit(user_wallet: str, amount: float) -> CircleTransferResult
+        CircleService().debit_stake(
+            source_wallet_id=user.wallet_address,
+            amount_usdc=payload.amount_usdc,
+            stake_id=stake.id,
+        )
         return stake
 
     def get_user_stakes(self, user_id: UUID) -> List[Stake]:
@@ -61,8 +66,17 @@ class StakeService:
             raise HTTPException(400, "Stake cannot be refunded in its current state")
         stake.status = StakeStatus.REFUNDED
         stake.resolved_at = datetime.utcnow()
-        # TODO: circle_service.credit(user_wallet=user.wallet_address, amount=stake.amount_usdc)
-        # Interface: CircleService.credit(user_wallet: str, amount: float) -> CircleTransferResult
+        CircleService().credit_refund(
+            destination_wallet_id=user.wallet_address,
+            amount_usdc=stake.amount_usdc,
+            stake_id=stake.id,
+        )
+        HCSAnchoringService().anchor_stake_decision(
+            stake_id=stake.id,
+            user_id=user.id,
+            decision="refunded",
+            amount_usdc=stake.amount_usdc,
+        )
         self.db.commit()
         self.db.refresh(stake)
         return stake
@@ -74,7 +88,18 @@ class StakeService:
         stake.status = StakeStatus.SLASHED
         stake.slash_reason = reason
         stake.resolved_at = datetime.utcnow()
-        # TODO: trigger slashing policy + reputation event
+        CircleService().transfer_slash(
+            amount_usdc=stake.amount_usdc,
+            stake_id=stake.id,
+            reason=reason,
+        )
+        HCSAnchoringService().anchor_stake_decision(
+            stake_id=stake.id,
+            user_id=stake.user_id,
+            decision="slashed",
+            amount_usdc=stake.amount_usdc,
+            slash_reason=reason,
+        )
         self.db.commit()
         self.db.refresh(stake)
         return stake
