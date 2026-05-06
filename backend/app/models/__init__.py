@@ -9,9 +9,10 @@ from .attestation import MeetupAttestation
 from .reputation import ReputationScore
 from .report import Report
 from .block import Block
+from .match_agent import UserPreferences
 
 __all__ = [
     "User", "Persona", "Room", "Stake", "Escrow",
     "Match", "Message", "MeetupAttestation",
-    "ReputationScore", "Report", "Block",
+    "ReputationScore", "Report", "Block", "UserPreferences",
 ]
