@@ -13,3 +13,7 @@ venv/
 node_modules/
 .DS_Store
 *.log
+*.bak
+solana/target/
+solana/.anchor/
+solana/test-ledger/
