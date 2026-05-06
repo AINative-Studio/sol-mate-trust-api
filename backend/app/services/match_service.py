@@ -9,12 +9,14 @@ from ..models.user import User
 from ..schemas.match import MatchRequest, MatchList
 from ..core.errors import MatchNotFoundError, MessagingBlockedError, BlockedUserError
 from .persona_service import PersonaService
+from .interaction_policy_service import InteractionPolicyService
 
 
 class MatchService:
     def __init__(self, db: Session):
         self.db = db
         self.persona_svc = PersonaService(db)
+        self.policy = InteractionPolicyService(db)
 
     def request_match(self, user: User, payload: MatchRequest) -> Match:
         # Get requester's active persona
@@ -29,8 +31,8 @@ class MatchService:
 
         self.persona_svc.validate_active(requester_persona)
 
-        # Check block status
-        self._check_not_blocked(user.id, payload.target_persona_id)
+        # Check block status via policy (DRY)
+        self.policy.check_can_match(user.id, payload.target_persona_id)
 
         match = Match(
             id=uuid.uuid4(),
@@ -80,6 +82,30 @@ class MatchService:
         total = len(matches)
         return MatchList(matches=matches, total=total)
 
+    def expire_stale_matches(self) -> int:
+        """Set status=EXPIRED for all PENDING matches older than 48 hours.
+
+        Returns the number of matches expired.
+        """
+        cutoff = datetime.utcnow() - timedelta(hours=48)
+        stale = (
+            self.db.query(Match)
+            .filter(
+                Match.status == MatchStatus.PENDING,
+                Match.created_at <= cutoff,
+            )
+            .all()
+        )
+        for match in stale:
+            match.status = MatchStatus.EXPIRED
+        if stale:
+            self.db.commit()
+        return len(stale)
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
     def _get_or_404(self, match_id: UUID) -> Match:
         m = self.db.query(Match).filter(Match.id == match_id).first()
         if not m:
@@ -94,15 +120,3 @@ class MatchService:
         if not persona:
             from fastapi import HTTPException
             raise HTTPException(403, "Not authorized to respond to this match")
-
-    def _check_not_blocked(self, user_id: UUID, target_persona_id: UUID):
-        from ..models.block import Block
-        target_persona = self.db.query(Persona).filter(Persona.id == target_persona_id).first()
-        if not target_persona:
-            return
-        block = self.db.query(Block).filter(
-            ((Block.blocker_id == user_id) & (Block.blocked_id == target_persona.user_id)) |
-            ((Block.blocker_id == target_persona.user_id) & (Block.blocked_id == user_id))
-        ).first()
-        if block:
-            raise BlockedUserError()
