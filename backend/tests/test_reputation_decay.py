@@ -6,11 +6,16 @@ from datetime import datetime, timedelta
 
 import pytest
 
+from app.models.attestation import MeetupAttestation, AttestationStatus, AttestationMethod
+from app.models.match import Match, MatchStatus
+from app.models.persona import Persona, IntentMode
 from app.models.reputation import ReputationScore, ReputationEventType
+from app.models.room import Room, RoomType, RoomPrivacyLevel
 from app.models.user import User, VerificationLevel, PrivacyMode
 from app.services.reputation_decay_service import ReputationDecayService
 from app.services.social_reputation_service import SocialReputationService
 from app.schemas.reputation import FeedbackCreate
+from app.core.errors import PersonaNotFoundError
 
 
 def _user(db) -> User:
@@ -201,3 +206,197 @@ def test_apply_delta_clamps_at_zero(db):
     score.safety_score = 2.0
     svc._apply_delta(score, "safety_score", -50.0)
     assert score.safety_score == pytest.approx(0.0)
+
+
+# ── get_by_persona ─────────────────────────────────────────────────────────────
+
+def _persona(db, user: User) -> Persona:
+    p = Persona(
+        id=uuid.uuid4(),
+        user_id=user.id,
+        display_name="TestP",
+        intent_mode=IntentMode.SOCIAL,
+        is_active=True,
+    )
+    db.add(p)
+    db.commit()
+    db.refresh(p)
+    return p
+
+
+def test_get_by_persona_returns_score(db):
+    user = _user(db)
+    persona = _persona(db, user)
+    svc = SocialReputationService(db)
+
+    score = svc.get_by_persona(persona.id)
+
+    assert score is not None
+    assert score.user_id == user.id
+
+
+def test_get_by_persona_creates_score_if_missing(db):
+    """Persona exists but no ReputationScore yet — should auto-create."""
+    user = _user(db)
+    persona = _persona(db, user)
+    svc = SocialReputationService(db)
+
+    # Confirm no score exists yet
+    existing = db.query(ReputationScore).filter(ReputationScore.user_id == user.id).first()
+    assert existing is None
+
+    score = svc.get_by_persona(persona.id)
+    assert score.user_id == user.id
+
+
+def test_get_by_persona_raises_404_for_unknown_persona(db):
+    svc = SocialReputationService(db)
+    with pytest.raises(PersonaNotFoundError):
+        svc.get_by_persona(uuid.uuid4())
+
+
+# ── process_attestation ────────────────────────────────────────────────────────
+
+def _make_match(db, user_a: User, user_b: User) -> Match:
+    room = Room(
+        id=uuid.uuid4(), name="MatchRoom", type=RoomType.LOUNGE,
+        privacy_level=RoomPrivacyLevel.PUBLIC, stake_required=0.0,
+        intent_modes=[], is_active=True,
+    )
+    db.add(room)
+    db.commit()
+
+    persona_a = Persona(id=uuid.uuid4(), user_id=user_a.id, display_name="PA",
+                        intent_mode=IntentMode.SOCIAL, is_active=True)
+    persona_b = Persona(id=uuid.uuid4(), user_id=user_b.id, display_name="PB",
+                        intent_mode=IntentMode.SOCIAL, is_active=True)
+    db.add_all([persona_a, persona_b])
+    db.commit()
+
+    match = Match(
+        id=uuid.uuid4(),
+        requester_persona_id=persona_a.id,
+        target_persona_id=persona_b.id,
+        room_id=room.id,
+        status=MatchStatus.ACCEPTED,
+    )
+    db.add(match)
+    db.commit()
+    db.refresh(match)
+    return match
+
+
+def _make_attestation(db, match: Match, initiator: User, counterparty: User,
+                       status: AttestationStatus) -> MeetupAttestation:
+    att = MeetupAttestation(
+        id=uuid.uuid4(),
+        match_id=match.id,
+        initiator_user_id=initiator.id,
+        counterparty_user_id=counterparty.id,
+        method=AttestationMethod.GPS_CHECKIN,
+        status=status,
+    )
+    db.add(att)
+    db.commit()
+    db.refresh(att)
+    return att
+
+
+def test_process_attestation_confirmed_boosts_both_users(db):
+    user_a = _user(db)
+    user_b = _user(db)
+    match = _make_match(db, user_a, user_b)
+    att = _make_attestation(db, match, user_a, user_b, AttestationStatus.CONFIRMED)
+
+    svc = SocialReputationService(db)
+    svc.process_attestation(att.id)
+
+    score_a = svc.get_or_create(user_a.id)
+    score_b = svc.get_or_create(user_b.id)
+
+    # Both should have total_meetups incremented
+    assert score_a.total_meetups >= 1
+    assert score_b.total_meetups >= 1
+    # meetup_completion_score boosted above default 50
+    assert score_a.meetup_completion_score > 50.0
+    assert score_b.meetup_completion_score > 50.0
+
+
+def test_process_attestation_non_confirmed_does_nothing(db):
+    user_a = _user(db)
+    user_b = _user(db)
+    match = _make_match(db, user_a, user_b)
+    att = _make_attestation(db, match, user_a, user_b, AttestationStatus.FAILED)
+
+    svc = SocialReputationService(db)
+    svc.process_attestation(att.id)
+
+    # Scores should not have been created (no-op)
+    score_a = db.query(ReputationScore).filter(ReputationScore.user_id == user_a.id).first()
+    assert score_a is None
+
+
+def test_process_attestation_unknown_id_does_nothing(db):
+    svc = SocialReputationService(db)
+    # Should not raise — just silently no-op
+    svc.process_attestation(uuid.uuid4())
+
+
+def test_process_attestation_only_initiator_set(db):
+    """If counterparty_user_id is None, only initiator gets the boost."""
+    user_a = _user(db)
+    user_b = _user(db)
+    match = _make_match(db, user_a, user_b)
+    att = MeetupAttestation(
+        id=uuid.uuid4(),
+        match_id=match.id,
+        initiator_user_id=user_a.id,
+        counterparty_user_id=None,
+        method=AttestationMethod.GPS_CHECKIN,
+        status=AttestationStatus.CONFIRMED,
+    )
+    db.add(att)
+    db.commit()
+
+    svc = SocialReputationService(db)
+    svc.process_attestation(att.id)
+
+    score_a = svc.get_or_create(user_a.id)
+    assert score_a.total_meetups >= 1
+
+
+# ── all DIMENSION_MAP event types ─────────────────────────────────────────────
+
+@pytest.mark.parametrize("event_type,dimension,direction", [
+    (ReputationEventType.MEETUP_COMPLETED,   "meetup_completion_score", +1),
+    (ReputationEventType.MEETUP_NO_SHOW,     "meetup_completion_score", -1),
+    (ReputationEventType.MESSAGE_RESPONDED,  "response_score",          +1),
+    (ReputationEventType.MESSAGE_IGNORED,    "response_score",          -1),
+    (ReputationEventType.REPORT_RECEIVED,    "safety_score",            -1),
+    (ReputationEventType.STAKE_SLASHED,      "reliability_score",       -1),
+    (ReputationEventType.CONSENT_CONFIRMED,  "consent_confirmation_score", +1),
+    (ReputationEventType.POSITIVE_FEEDBACK,  "reliability_score",       +1),
+    (ReputationEventType.NEGATIVE_FEEDBACK,  "reliability_score",       -1),
+])
+def test_dimension_map_all_event_types(db, event_type, dimension, direction):
+    user = _user(db)
+    svc = SocialReputationService(db)
+    score = svc.get_or_create(user.id)
+    before = getattr(score, dimension)
+
+    reporter = User(id=uuid.uuid4(), wallet_address=f"rep_{uuid.uuid4().hex[:6]}", is_active=True)
+    svc.record_feedback(
+        reporter,
+        FeedbackCreate(
+            target_user_id=user.id,
+            reference_id=uuid.uuid4(),
+            event_type=event_type,
+        )
+    )
+
+    db.refresh(score)
+    after = getattr(score, dimension)
+    if direction > 0:
+        assert after >= before  # may hit 100 cap
+    else:
+        assert after <= before  # may hit 0 floor
