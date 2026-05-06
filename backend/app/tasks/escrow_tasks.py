@@ -23,11 +23,12 @@ def auto_slash_expired_escrows(self) -> dict:
 
     with SessionLocal() as db:
         now = datetime.utcnow()
+        from app.models.escrow import EscrowStatus
         expired = (
             db.query(Escrow)
             .filter(
-                Escrow.deadline < now,
-                Escrow.status == "locked",
+                Escrow.confirm_deadline < now,
+                Escrow.status == EscrowStatus.OPEN,
             )
             .all()
         )
