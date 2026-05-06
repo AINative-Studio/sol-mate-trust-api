@@ -26,6 +26,8 @@ class EscrowService:
         self.db.add(escrow)
         self.db.commit()
         self.db.refresh(escrow)
+        # TODO: circle_service.debit(user_wallet=user.wallet_address, amount=payload.amount_usdc)
+        # Interface: CircleService.debit(user_wallet: str, amount: float) -> CircleTransferResult
         # TODO: anchor to Hedera HCS
         return escrow
 
@@ -38,7 +40,8 @@ class EscrowService:
 
         escrow.status = EscrowStatus.CONFIRMED
         escrow.resolved_at = datetime.utcnow()
-        # TODO: release USDC via Circle
+        # TODO: circle_service.credit(user_wallet=<counterparty_wallet>, amount=escrow.amount_usdc)
+        # Interface: CircleService.credit(user_wallet: str, amount: float) -> CircleTransferResult
         self.db.commit()
         self.db.refresh(escrow)
         return escrow

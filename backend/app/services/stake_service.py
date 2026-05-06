@@ -41,6 +41,8 @@ class StakeService:
         self.db.add(stake)
         self.db.commit()
         self.db.refresh(stake)
+        # TODO: circle_service.debit(user_wallet=user.wallet_address, amount=payload.amount_usdc)
+        # Interface: CircleService.debit(user_wallet: str, amount: float) -> CircleTransferResult
         return stake
 
     def get_user_stakes(self, user_id: UUID) -> List[Stake]:
@@ -59,7 +61,8 @@ class StakeService:
             raise HTTPException(400, "Stake cannot be refunded in its current state")
         stake.status = StakeStatus.REFUNDED
         stake.resolved_at = datetime.utcnow()
-        # TODO: trigger Circle USDC refund
+        # TODO: circle_service.credit(user_wallet=user.wallet_address, amount=stake.amount_usdc)
+        # Interface: CircleService.credit(user_wallet: str, amount: float) -> CircleTransferResult
         self.db.commit()
         self.db.refresh(stake)
         return stake
