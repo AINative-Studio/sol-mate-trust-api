@@ -15,12 +15,10 @@ anyio==4.6.2
 # Solana
 solana==0.35.0
 solders==0.21.0
-# Hedera (HCS anchoring)
-hedera-sdk-python==2.12.0
-# Circle (USDC payments)
-circle-sdk==1.0.0
+# Hedera (HCS anchoring — uses httpx directly, no SDK needed)
+# Circle (USDC payments — uses httpx directly, no SDK needed)
 # ZeroDB
-zerodb-mcp==0.2.0
+zerodb-mcp==1.1.0
 # LLM
 openai==1.54.0
 anthropic==0.39.0
