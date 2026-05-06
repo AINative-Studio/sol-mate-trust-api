@@ -41,6 +41,6 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     personas = relationship("Persona", back_populates="user", cascade="all, delete-orphan")
-    stakes = relationship("Stake", back_populates="user", cascade="all, delete-orphan")
+    stakes = relationship("Stake", foreign_keys="Stake.user_id", back_populates="user", cascade="all, delete-orphan")
     reports_filed = relationship("Report", foreign_keys="Report.reporter_id", back_populates="reporter")
     blocks = relationship("Block", foreign_keys="Block.blocker_id", back_populates="blocker")

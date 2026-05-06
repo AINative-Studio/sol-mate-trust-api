@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import List, Optional
@@ -8,6 +8,7 @@ from ..models.user import User
 from ..schemas.room import RoomCreate, RoomResponse, RoomJoin
 from ..schemas.persona import PersonaResponse
 from ..services.room_service import RoomService
+from ..services import room_discovery_service
 
 router = APIRouter(prefix="/v1/rooms", tags=["rooms"])
 
@@ -34,6 +35,23 @@ async def list_rooms(
 ):
     svc = RoomService(db)
     return svc.list_rooms(type=type, lat=latitude, lng=longitude, radius_km=radius_km, skip=skip, limit=limit)
+
+
+@router.get("/discover", response_model=List[RoomResponse])
+async def discover_rooms(
+    lat: float = Query(..., description="Latitude of the requester"),
+    lng: float = Query(..., description="Longitude of the requester"),
+    radius_km: float = Query(10.0, gt=0, description="Search radius in kilometres"),
+    intent_mode: Optional[str] = Query(None, description="Filter by intent mode"),
+    db: Session = Depends(get_db),
+):
+    return room_discovery_service.get_nearby_rooms(
+        db=db,
+        lat=lat,
+        lng=lng,
+        radius_km=radius_km,
+        intent_mode=intent_mode,
+    )
 
 
 @router.get("/{room_id}", response_model=RoomResponse)
