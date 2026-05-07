@@ -9,7 +9,7 @@ from ..core.database import Base
 
 class Block(Base):
     __tablename__ = "sm_blocks"
-    __table_args__ = (UniqueConstraint("blocker_id", "blocked_id", name="uq_block"),)
+    __table_args__ = (UniqueConstraint("blocker_id", "blocked_id", name="sm_uq_block"),)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     blocker_id = Column(UUID(as_uuid=True), ForeignKey("sm_users.id", ondelete="CASCADE"), nullable=False)
