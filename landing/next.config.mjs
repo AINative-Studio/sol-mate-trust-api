@@ -6,15 +6,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  async rewrites() {
-    return [
-      // Rewrite runs before trailingSlash redirect, serving .md files correctly
-      {
-        source: "/agents.md",
-        destination: "/agents-md",
-      },
-    ];
-  },
   async redirects() {
     return [
       {
@@ -22,9 +13,15 @@ const nextConfig = {
         destination: "/.well-known/ai-plugin.json",
         permanent: true,
       },
+      // Redirect agents.md to agents-md (avoids trailingSlash 308 loop on .md extension)
+      {
+        source: "/agents.md",
+        destination: "/agents-md",
+        permanent: false,
+      },
       {
         source: "/AGENTS.md",
-        destination: "/agents.md",
+        destination: "/agents-md",
         permanent: true,
       },
     ];
