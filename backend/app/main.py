@@ -12,7 +12,7 @@ from .models import *  # noqa
 from .api import (
     users, personas, rooms, stakes, matches,
     attestations, social_reputation, safety, match_agent,
-    nfts,
+    nfts, transfers,
 )
 
 
@@ -55,6 +55,7 @@ app.include_router(social_reputation.router)
 app.include_router(safety.router)
 app.include_router(match_agent.router)
 app.include_router(nfts.router)
+app.include_router(transfers.router)
 
 
 @app.get("/health")

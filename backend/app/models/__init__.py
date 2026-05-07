@@ -11,10 +11,11 @@ from .report import Report
 from .block import Block
 from .match_agent import UserPreferences
 from .moment_nft import MomentNFT
+from .transfer import Transfer
 
 __all__ = [
     "User", "Persona", "Room", "Stake", "Escrow",
     "Match", "Message", "MeetupAttestation",
     "ReputationScore", "Report", "Block", "UserPreferences",
-    "MomentNFT",
+    "MomentNFT", "Transfer",
 ]
