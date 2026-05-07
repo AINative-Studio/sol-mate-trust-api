@@ -7,6 +7,7 @@ from ..models.user import User
 from .preference_memory_service import PreferenceMemoryService
 from .compatibility_scoring_service import CompatibilityScoringService
 from .vibe_filter_service import VibeFilterService
+from .ainative_service import generate_match_intro
 
 
 class MatchmakingService:
@@ -104,11 +105,13 @@ class MatchmakingService:
     ) -> str:
         prefs = self._pref_svc.get(user.id)
         shared = self._shared_interests(user.id, persona)
+        intent = prefs.intent_mode if prefs else None
 
-        parts = [f"Hi {persona.display_name}!"]
-        if shared:
-            parts.append(f"We both love {', '.join(shared[:3])}.")
-        if context:
-            parts.append(context)
-        parts.append("Looks like we might vibe well together.")
-        return " ".join(parts)
+        # Use AINative LLM for personalised intro; falls back to template if unconfigured
+        return generate_match_intro(
+            requester_name=user.wallet_address[:8] + "...",
+            target_name=persona.display_name or "there",
+            shared_interests=shared,
+            requester_intent=intent,
+            context=context,
+        )

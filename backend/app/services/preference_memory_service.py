@@ -1,7 +1,11 @@
 """
 Preference Memory Service — stores and retrieves user preferences,
-computes bag-of-words keyword embeddings, and provides cosine similarity.
-No external API needed: pure Python + numpy for hackathon use.
+computes semantic embeddings, and provides cosine similarity.
+
+Primary: 768-dim BAAI/bge embeddings via AINative /zerodb/embed (16ms inference)
+Fallback: pure-Python bag-of-words (45-term vocab, L2-normalised) when unconfigured
+
+The fallback ensures all tests pass and the API runs without external keys.
 """
 from __future__ import annotations
 
@@ -12,10 +16,13 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from ..models.match_agent import UserPreferences
+from .ainative_service import embed_preferences, upsert_preference_vector, _is_configured as _ainative_configured
 
 
-# Shared vocabulary of keywords that span interests + personality_traits.
-# Intentionally broad so ad-hoc terms still produce non-zero overlap.
+# ---------------------------------------------------------------------------
+# Fallback: bag-of-words vocabulary (used when AINative not configured)
+# ---------------------------------------------------------------------------
+
 _VOCAB: list[str] = [
     # interests
     "music", "travel", "hiking", "cooking", "gaming", "art", "sports",
@@ -37,6 +44,24 @@ def _normalise(vec: list[float]) -> list[float]:
         return vec
     return [x / mag for x in vec]
 
+
+def _bow_embedding(prefs: dict) -> list[float]:
+    """Fallback: bag-of-words vector over fixed 45-term vocabulary."""
+    vec = [0.0] * len(_VOCAB)
+    for term in prefs.get("interests", []) or []:
+        key = term.lower().replace(" ", "_")
+        if key in _VOCAB_INDEX:
+            vec[_VOCAB_INDEX[key]] += 1.0
+    for term in prefs.get("personality_traits", []) or []:
+        key = term.lower().replace(" ", "_")
+        if key in _VOCAB_INDEX:
+            vec[_VOCAB_INDEX[key]] += 1.0
+    return _normalise(vec)
+
+
+# ---------------------------------------------------------------------------
+# Service
+# ---------------------------------------------------------------------------
 
 class PreferenceMemoryService:
     def __init__(self, db: Session):
@@ -71,6 +96,8 @@ class PreferenceMemoryService:
             existing.embedding_vector = embedding
             self.db.commit()
             self.db.refresh(existing)
+            # Also sync to ZeroDB vector store for cross-user semantic search
+            self._sync_to_zerodb(user_id, embedding, prefs)
             return existing
 
         age = prefs.get("age_range", {})
@@ -88,6 +115,7 @@ class PreferenceMemoryService:
         self.db.add(record)
         self.db.commit()
         self.db.refresh(record)
+        self._sync_to_zerodb(user_id, embedding, prefs)
         return record
 
     def get(self, user_id: UUID) -> Optional[UserPreferences]:
@@ -99,22 +127,16 @@ class PreferenceMemoryService:
 
     def compute_embedding(self, prefs: dict) -> list[float]:
         """
-        Build a normalised bag-of-words vector from interests + personality_traits.
-        Terms outside the fixed vocabulary are ignored (hackathon simplification).
+        Compute preference embedding.
+        - AINative configured: 768-dim BAAI/bge semantic vector (16ms, free tier)
+        - Fallback: 45-dim bag-of-words keyword vector (zero dependencies)
         """
-        vec = [0.0] * len(_VOCAB)
-
-        for term in prefs.get("interests", []) or []:
-            key = term.lower().replace(" ", "_")
-            if key in _VOCAB_INDEX:
-                vec[_VOCAB_INDEX[key]] += 1.0
-
-        for term in prefs.get("personality_traits", []) or []:
-            key = term.lower().replace(" ", "_")
-            if key in _VOCAB_INDEX:
-                vec[_VOCAB_INDEX[key]] += 1.0
-
-        return _normalise(vec)
+        if _ainative_configured():
+            return embed_preferences(
+                interests=prefs.get("interests") or [],
+                personality_traits=prefs.get("personality_traits") or [],
+            )
+        return _bow_embedding(prefs)
 
     @staticmethod
     def cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
@@ -122,5 +144,28 @@ class PreferenceMemoryService:
         if not vec_a or not vec_b or len(vec_a) != len(vec_b):
             return 0.0
         dot = sum(a * b for a, b in zip(vec_a, vec_b))
-        # Clamp to [0, 1] — vectors are normalised so magnitude is ~1
+        # Clamp to [0, 1] — vectors are normalised so dot ≈ cosine
         return max(0.0, min(1.0, dot))
+
+    # ------------------------------------------------------------------
+    # Internal
+    # ------------------------------------------------------------------
+
+    def _sync_to_zerodb(self, user_id: UUID, embedding: list[float], prefs: dict) -> None:
+        """Best-effort: push preference vector to ZeroDB for cross-user semantic search."""
+        interests = prefs.get("interests") or []
+        traits = prefs.get("personality_traits") or []
+        profile_text = "Interests: " + ", ".join(interests)
+        if traits:
+            profile_text += ". Personality: " + ", ".join(traits)
+
+        upsert_preference_vector(
+            user_id=str(user_id),
+            embedding=embedding,
+            metadata={
+                "intent_mode": prefs.get("intent_mode"),
+                "profile_text": profile_text,
+                "interests": interests,
+                "personality_traits": traits,
+            },
+        )

@@ -67,9 +67,17 @@ Sol Mate introduces **economic accountability** into social interactions:
 - Repeat no-shows (3+) → DM sending suspended
 - Stake multiplier: each no-show increases required stake by 0.5×, max 3×
 
-### AI Match Agent
-- **Preference memory** — stores interests, personality traits, intent mode, age range
-- **Bag-of-words embedding** — 45-term vocabulary, L2-normalised, pure Python (no numpy)
+### AI Match Agent (Powered by AINative Studio)
+
+Sol Mate uses [AINative Studio's](https://ainative.studio) hosted LLM and vector API — no separate OpenAI or Anthropic accounts needed. The `AINATIVE_API_KEY` env var unlocks real AI; everything gracefully falls back to pure-Python when unset.
+
+| Capability | AINative Endpoint | Fallback |
+|-----------|------------------|---------|
+| 768-dim preference embeddings | `POST /zerodb/embed` (BAAI/bge, 16ms) | Bag-of-words (45-term vocab, L2-norm) |
+| Semantic profile search | `POST /zerodb/vectors/search` | In-memory cosine similarity |
+| Personalized match intros | Chat completions (`claude-sonnet-4-5`) | Template string |
+| Message moderation | Chat completions (`llama-3.3-8b-instruct`) | Always `{"safe": true}` |
+
 - **5-dimension compatibility scoring:**
 
 | Dimension | Weight |
@@ -81,7 +89,8 @@ Sol Mate introduces **economic accountability** into social interactions:
 | Behavioral safety score | 10% |
 
 - **Vibe filter** — exclude reported users, filter by intent mode
-- **AI intro generator** — personalized opening message based on shared interests
+- **AI intro generator** — LLM-generated personalized opening message based on shared interests and intent mode
+- **Content moderation** — every outgoing DM scored before delivery; flagged messages blocked pre-send
 
 ### Meetup Attestations
 - Both parties submit GPS coordinates after meeting
@@ -277,17 +286,58 @@ anchor deploy --provider.cluster devnet
 
 ---
 
-## Open Source Strategy
+## What We Built vs. What We Built On
 
-Sol Mate is MIT licensed and built to be reused. The three primitives at its core are being extracted as standalone packages for the Solana/Web3 ecosystem:
+### Built on Agent402 / infrastructure primitives
 
-| Package | What it does | Planned registry |
-|---------|-------------|-----------------|
-| **`solmate-stake-sdk`** | Stake-gated access control — any Solana dApp can require a USDC stake before a DM, room entry, or action | PyPI + npm |
-| **`solmate-reputation`** | On-chain reputation decay with Hedera HCS audit anchoring — portable trust scoring for social dApps | PyPI |
-| **`x402-solana`** | FastAPI middleware bridging Solana stake mechanics with Coinbase x402 HTTP payments on Base — novel cross-chain primitive | PyPI |
+Sol Mate integrates several infrastructure layers through the Agent402 / AINative ecosystem rather than rebuilding them:
 
-These packages are planned for extraction post-hackathon. The full protocol design and interfaces are already implemented in this repo — see `backend/app/services/solana_service.py`, `backend/app/services/social_reputation_service.py`, and `backend/app/middleware/x402_payment.py`.
+| Primitive | Provider | How we use it |
+|-----------|---------|--------------|
+| USDC escrow & transfer | **Circle** (via Agent402) | Fund, hold, release, and slash stakes |
+| Immutable audit trail | **Hedera HCS** (via Agent402) | Anchor every attestation and safety decision on-chain |
+| LLM inference | **AINative Studio API** | `claude-sonnet-4-5` intro generation, `llama-3.3-8b` message moderation |
+| Vector embeddings | **AINative ZeroDB** | 768-dim BAAI/bge embeddings at 16ms; semantic cross-user search |
+| On-chain payments | **Coinbase x402** (Base) | HTTP 402 payment gate for DM unlock staking |
+
+### Built uniquely for Sol Mate
+
+Everything below was designed and built from scratch for this project:
+
+| Component | Location | What's unique |
+|-----------|---------|--------------|
+| **Stake-to-interact protocol** | `backend/app/services/stake_service.py` | 5 stake types, no-show multiplier (0.5× per offense, 3× cap), automated Celery slash evaluation |
+| **Anchor escrow program** | `solana/programs/sol-mate-escrow/` | PDA-keyed vault per `(staker, room_id)`, slash splits to safety fund |
+| **5-dimension reputation engine** | `backend/app/services/social_reputation_service.py` | Weighted composite (reliability 30%, safety 30%, response 15%, meetup 15%, consent 10%), event-driven updates |
+| **Proximity attestation** | `backend/app/services/attestation_service.py` | GPS haversine (100m threshold) + BLE token + QR fallback; both parties must confirm |
+| **Intent-mode room scoping** | `backend/app/services/room_discovery_service.py` | Rooms and personas scope-matched by intent (social / dating / networking / friendship) |
+| **Persona system** | `backend/app/models/persona.py` | Multiple personas per wallet, visibility scopes (public / semi-private / private), room-scoped personas |
+| **Consent-gated messaging** | `backend/app/services/match_service.py` + `message_service.py` | Both parties must accept before any messages flow; stake must be active |
+| **AI matchmaking service** | `backend/app/services/ainative_service.py` | AINative gateway integration with graceful bag-of-words fallback; ZeroDB vector sync |
+| **Repeat-offender detection** | `backend/app/services/safety_service.py` | 3+ reports → automatic suspension, stake multiplier escalation, HCS anchor |
+
+---
+
+## Open Source Strategy — Three Packages, Live Now
+
+Sol Mate's three core primitives have been extracted as standalone, dependency-injection-friendly PyPI packages **during the hackathon**. Each works without any external service configured (graceful no-ops throughout).
+
+| Package | Install | What it does |
+|---------|---------|-------------|
+| **[`solmate-stake-sdk`](packages/solmate-stake-sdk/)** | `pip install solmate-stake-sdk` | Stake-gated access control — `StakeGate`, `StakeRecord`, `SlashingPolicy`. Any Solana dApp can require USDC before a DM, room entry, or action. No-show multiplier built in. |
+| **[`solmate-reputation`](packages/solmate-reputation/)** | `pip install solmate-reputation` | 5-dimension portable reputation scoring with time-based decay and Hedera HCS anchoring. Framework-agnostic — bring your own storage. |
+| **[`x402-solana`](packages/x402-solana/)** | `pip install x402-solana` | FastAPI middleware for Coinbase x402 HTTP payments on Base. Drop-in `require_x402_payment()` dependency for any endpoint. |
+
+All three are MIT licensed and located in `packages/`. They don't depend on each other — use one, two, or all three.
+
+```bash
+# Quick example: add stake-gating to your app in 5 lines
+from solmate_stake_sdk import StakeGate, StakeType
+
+gate = StakeGate()
+ok, error = gate.validate(StakeType.DM, amount_usdc=0.50, no_show_count=0)
+record = gate.create_stake(user_id="0xABC", stake_type=StakeType.DM, amount_usdc=0.50)
+```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to get involved.
 

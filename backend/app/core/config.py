@@ -42,7 +42,13 @@ class Settings(BaseSettings):
     ZERODB_USERNAME: Optional[str] = None
     ZERODB_PASSWORD: Optional[str] = None
 
-    # AI / LLM
+    # AINative Studio — LLM gateway + ZeroDB embeddings
+    # Enables: claude-sonnet-4.5 intro generation, 768-dim BAAI/bge embeddings,
+    #          ZeroDB vector search for cross-user preference matching
+    AINATIVE_API_URL: str = "https://api.ainative.studio"
+    AINATIVE_API_KEY: Optional[str] = None  # sk_... from ainative.studio
+
+    # Legacy / direct keys (unused — routed through AINative gateway instead)
     OPENAI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
 
