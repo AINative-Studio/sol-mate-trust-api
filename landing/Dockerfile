@@ -10,4 +10,4 @@ WORKDIR /app
 RUN npm install -g serve
 COPY --from=builder /app/out ./out
 EXPOSE 3000
-CMD ["sh", "-c", "serve out -l ${PORT:-3000}"]
+CMD ["sh", "-c", "serve out --listen tcp://0.0.0.0:${PORT:-3000}"]
