@@ -119,7 +119,7 @@ backend/app/
   api/          ← FastAPI route handlers (rooms, matches, stakes, safety, reputation…)
   models/       ← SQLAlchemy ORM (User, Persona, Room, Stake, Match, Message, Attestation…)
   schemas/      ← Pydantic v2 request/response schemas
-  services/     ← Business logic (24 service classes)
+  services/     ← Business logic (27 service classes)
   core/         ← Config, JWT auth, DB pool, domain errors
   tasks/        ← Celery workers (escrow auto-slash, match expiry, reputation decay)
 
@@ -134,6 +134,98 @@ solana/
 - **Hedera HCS** — immutable audit log for attestations and safety decisions
 - **ZeroDB** — vector memory for AI preference matching
 - **X402** — HTTP payment protocol for stake transactions
+
+### Celery Background Workers
+
+Three worker queues run independently of the API process:
+
+| Task file | Schedule | What it does |
+|-----------|----------|-------------|
+| `tasks/escrow_tasks.py` | Every 1 hour | Evaluates pending stakes: refund confirmed meetups, slash no-shows (50% first, 100% repeat), update reputation |
+| `tasks/match_tasks.py` | Every 15 min | Expires unaccepted match requests after TTL, sends AI-generated intro for new matches |
+| `tasks/reputation_tasks.py` | Every 24 hours | Applies time-decay: −1pt/week per dimension for inactive users |
+
+Start the worker + beat scheduler:
+```bash
+celery -A app.tasks.celery_app worker --loglevel=info
+celery -A app.tasks.celery_app beat --loglevel=info
+```
+
+### Anchor PDA Architecture
+
+The Solana Anchor program (`GihCjDJeAwbNtr826dEAfQFp4GAVBgHWLxDf2sqsQLif`) stores stake funds in Program Derived Addresses keyed by:
+
+```
+PDA seeds: ["stake", staker_pubkey, room_id_as_bytes]
+```
+
+This means each (user, room) pair has its own on-chain vault. The program exposes three instructions:
+
+| Instruction | Authority | Effect |
+|-------------|-----------|--------|
+| `stake()` | Staker | Lock SOL/SPL tokens in PDA vault |
+| `refund()` | Program (API) | Release full stake back to staker |
+| `slash()` | Program (API) | Transfer slash % to safety fund, remainder to staker |
+
+The API calls these via the `solana_service.py` using the program IDL. Every call returns an Explorer link for the transaction.
+
+### Preference Embedding Algorithm
+
+The AI match agent uses a pure-Python bag-of-words embedding (zero numpy dependency):
+
+1. **Vocabulary**: 45 curated terms across interest categories (tech, arts, sports, lifestyle, values)
+2. **Encoding**: Each preference list → binary vector of length 45
+3. **Normalisation**: L2-norm (unit vector) to eliminate length bias
+4. **Similarity**: Dot product of two unit vectors = cosine similarity
+5. **Score range**: 0.0–1.0, where 1.0 = identical preferences
+
+This runs in microseconds with no external dependencies and no model download required. See `services/preference_memory_service.py`.
+
+### Persona Visibility Scopes
+
+Each persona has a `visibility` field controlling discoverability:
+
+| Scope | Discoverability | Use Case |
+|-------|----------------|----------|
+| `public` | Visible in room lists and match recommendations globally | Default for networking/social |
+| `semi_private` | Visible only within the room they're attached to | Default for dating |
+| `private` | Never appears in recommendations; only direct-link access | High-privacy mode |
+
+Persona visibility is enforced at the query layer in `room_discovery_service.py` and `matchmaking_service.py`.
+
+### Block System
+
+`sm_blocks` table stores bidirectional block relationships. Enforcement happens at multiple layers:
+
+- **Room discovery**: blocked users never appear in room listings
+- **Match requests**: blocked users cannot initiate or receive match requests
+- **Messaging**: messages from blocked users are rejected at the API layer
+- **Match agent**: vibe filter excludes blocked users from all recommendations
+
+The `interaction_policy_service.py` centralises these checks so each endpoint doesn't need to reimplement block logic.
+
+---
+
+## Landing Page
+
+The `landing/` directory contains a Next.js landing page with:
+- Hero section with animated phone mockup
+- How-it-works 6-step flow
+- Feature grid (8 capabilities)
+- Tech stack overview
+- Web dApp / PWA / Seeker download CTAs
+- Open source section with planned packages
+
+```bash
+cd landing
+npm install
+npm run dev   # http://localhost:3000
+npm run build # static export to landing/out/
+```
+
+PWA manifest at `landing/public/manifest.json` — Sol Mate is installable as an app via "Add to Home Screen" on mobile browsers including Seeker.
+
+For Solana Seeker dApp Store submission steps, see `docs/deployment/SEEKER_DAPP_SUBMISSION.md`.
 
 ---
 
