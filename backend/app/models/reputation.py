@@ -27,7 +27,7 @@ class ReputationScore(Base):
     __tablename__ = "sm_reputation_scores"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("sm_users.id", ondelete="CASCADE"), nullable=False, unique=True)
     reliability_score = Column(Float, default=50.0)
     safety_score = Column(Float, default=50.0)
     response_score = Column(Float, default=50.0)
@@ -47,7 +47,7 @@ class ReputationEvent(Base):
     __tablename__ = "sm_reputation_events"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("sm_users.id", ondelete="CASCADE"), nullable=False)
     event_type = Column(SAEnum(ReputationEventType), nullable=False)
     delta = Column(Float, nullable=False)
     dimension = Column(String(64), nullable=False)

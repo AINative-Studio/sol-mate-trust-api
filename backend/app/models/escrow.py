@@ -28,8 +28,8 @@ class Escrow(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     type = Column(SAEnum(EscrowType), nullable=False)
-    initiator_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    counterparty_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    initiator_user_id = Column(UUID(as_uuid=True), ForeignKey("sm_users.id", ondelete="SET NULL"), nullable=True)
+    counterparty_user_id = Column(UUID(as_uuid=True), ForeignKey("sm_users.id", ondelete="SET NULL"), nullable=True)
     amount_usdc = Column(Float, nullable=False)
     status = Column(SAEnum(EscrowStatus), default=EscrowStatus.OPEN, nullable=False)
     hcs_topic_id = Column(String, nullable=True)  # Hedera anchoring

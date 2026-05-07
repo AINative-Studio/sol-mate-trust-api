@@ -10,7 +10,7 @@ class UserPreferences(Base):
     __tablename__ = "sm_user_preferences"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("sm_users.id", ondelete="CASCADE"), nullable=False, unique=True)
     intent_mode = Column(String(32), nullable=True)
     age_range_min = Column(Integer, nullable=True)
     age_range_max = Column(Integer, nullable=True)

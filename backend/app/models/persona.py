@@ -27,8 +27,8 @@ class Persona(Base):
     __tablename__ = "sm_personas"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    room_id = Column(UUID(as_uuid=True), ForeignKey("rooms.id", ondelete="SET NULL"), nullable=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("sm_users.id", ondelete="CASCADE"), nullable=False)
+    room_id = Column(UUID(as_uuid=True), ForeignKey("sm_rooms.id", ondelete="SET NULL"), nullable=True)
     display_name = Column(String(64), nullable=False)
     avatar_url = Column(String, nullable=True)
     bio = Column(String(500), nullable=True)

@@ -29,9 +29,9 @@ class MeetupAttestation(Base):
     __tablename__ = "sm_meetup_attestations"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    match_id = Column(UUID(as_uuid=True), ForeignKey("matches.id", ondelete="CASCADE"), nullable=False)
-    initiator_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    counterparty_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    match_id = Column(UUID(as_uuid=True), ForeignKey("sm_matches.id", ondelete="CASCADE"), nullable=False)
+    initiator_user_id = Column(UUID(as_uuid=True), ForeignKey("sm_users.id", ondelete="SET NULL"), nullable=True)
+    counterparty_user_id = Column(UUID(as_uuid=True), ForeignKey("sm_users.id", ondelete="SET NULL"), nullable=True)
     method = Column(SAEnum(AttestationMethod), nullable=False)
     status = Column(SAEnum(AttestationStatus), default=AttestationStatus.INITIATED, nullable=False)
     token = Column(String, nullable=True)  # QR/BLE/NFC token
@@ -40,7 +40,7 @@ class MeetupAttestation(Base):
     hcs_message_id = Column(String, nullable=True)  # Hedera HCS anchor
     initiator_confirmed = Column(Boolean, default=False)
     counterparty_confirmed = Column(Boolean, default=False)
-    escrow_id = Column(UUID(as_uuid=True), ForeignKey("escrows.id", ondelete="SET NULL"), nullable=True)
+    escrow_id = Column(UUID(as_uuid=True), ForeignKey("sm_escrows.id", ondelete="SET NULL"), nullable=True)
     notes = Column(Text, nullable=True)
     expires_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

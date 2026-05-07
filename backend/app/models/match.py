@@ -27,10 +27,10 @@ class Match(Base):
     __tablename__ = "sm_matches"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    room_id = Column(UUID(as_uuid=True), ForeignKey("rooms.id", ondelete="SET NULL"), nullable=True)
-    requester_persona_id = Column(UUID(as_uuid=True), ForeignKey("personas.id", ondelete="CASCADE"), nullable=False)
-    target_persona_id = Column(UUID(as_uuid=True), ForeignKey("personas.id", ondelete="CASCADE"), nullable=False)
-    stake_id = Column(UUID(as_uuid=True), ForeignKey("stakes.id", ondelete="SET NULL"), nullable=True)
+    room_id = Column(UUID(as_uuid=True), ForeignKey("sm_rooms.id", ondelete="SET NULL"), nullable=True)
+    requester_persona_id = Column(UUID(as_uuid=True), ForeignKey("sm_personas.id", ondelete="CASCADE"), nullable=False)
+    target_persona_id = Column(UUID(as_uuid=True), ForeignKey("sm_personas.id", ondelete="CASCADE"), nullable=False)
+    stake_id = Column(UUID(as_uuid=True), ForeignKey("sm_stakes.id", ondelete="SET NULL"), nullable=True)
     status = Column(SAEnum(MatchStatus), default=MatchStatus.PENDING, nullable=False)
     consent_state = Column(SAEnum(ConsentState), default=ConsentState.REQUESTED, nullable=False)
     compatibility_score = Column(Float, nullable=True)

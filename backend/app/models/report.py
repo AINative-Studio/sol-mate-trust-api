@@ -30,8 +30,8 @@ class Report(Base):
     __tablename__ = "sm_reports"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    reporter_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    reported_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    reporter_id = Column(UUID(as_uuid=True), ForeignKey("sm_users.id", ondelete="SET NULL"), nullable=True)
+    reported_user_id = Column(UUID(as_uuid=True), ForeignKey("sm_users.id", ondelete="CASCADE"), nullable=False)
     report_type = Column(SAEnum(ReportType), nullable=False)
     description = Column(Text, nullable=False)
     evidence_urls = Column(Text, nullable=True)  # JSON list of URLs

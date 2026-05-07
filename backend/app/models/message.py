@@ -19,12 +19,12 @@ class Message(Base):
     __tablename__ = "sm_messages"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    match_id = Column(UUID(as_uuid=True), ForeignKey("matches.id", ondelete="CASCADE"), nullable=False)
-    sender_persona_id = Column(UUID(as_uuid=True), ForeignKey("personas.id", ondelete="SET NULL"), nullable=True)
+    match_id = Column(UUID(as_uuid=True), ForeignKey("sm_matches.id", ondelete="CASCADE"), nullable=False)
+    sender_persona_id = Column(UUID(as_uuid=True), ForeignKey("sm_personas.id", ondelete="SET NULL"), nullable=True)
     type = Column(SAEnum(MessageType), default=MessageType.TEXT, nullable=False)
     content = Column(Text, nullable=False)
     is_encrypted = Column(Boolean, default=True, nullable=False)
-    stake_id = Column(UUID(as_uuid=True), ForeignKey("stakes.id", ondelete="SET NULL"), nullable=True)
+    stake_id = Column(UUID(as_uuid=True), ForeignKey("sm_stakes.id", ondelete="SET NULL"), nullable=True)
     is_read = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 

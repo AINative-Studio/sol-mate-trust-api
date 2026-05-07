@@ -31,7 +31,7 @@ class Room(Base):
     name = Column(String(128), nullable=False)
     description = Column(String(1000), nullable=True)
     type = Column(SAEnum(RoomType), default=RoomType.LOUNGE, nullable=False)
-    host_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    host_user_id = Column(UUID(as_uuid=True), ForeignKey("sm_users.id", ondelete="SET NULL"), nullable=True)
     location = Column(String, nullable=True)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
