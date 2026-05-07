@@ -6,6 +6,15 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async rewrites() {
+    return [
+      // Rewrite runs before trailingSlash redirect, serving .md files correctly
+      {
+        source: "/agents.md",
+        destination: "/agents-md",
+      },
+    ];
+  },
   async redirects() {
     return [
       {
