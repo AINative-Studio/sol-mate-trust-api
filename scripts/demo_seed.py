@@ -158,7 +158,7 @@ ROOMS = [
     {
         "name": "Crypto Devs",
         "description": "Builder chat for Consensus Miami 2026 hackers.",
-        "type": "topic",
+        "type": "lounge",
         "privacy_level": "public",
         "stake_required": 0.0,
         "intent_modes": ["networking"],
@@ -227,7 +227,7 @@ def seed(api: APIClient):
     section("3. Storing AI Match Preferences")
     for u in USERS:
         token = tokens[u["name"]]
-        resp = api.post("/v1/match-agent/preferences", {
+        resp = api.post("/v1/ai/match-agent/preferences", {
             "intent_mode": u["intent"],
             "interests": u["interests"],
             "age_range_min": 21,
@@ -294,7 +294,7 @@ def seed(api: APIClient):
     # ── 6. Get AI suggestions for Bob ────────────────────────────────────────
     section("6. AI Match Suggestions (Bob)")
     resp = api.get(
-        f"/v1/match-agent/suggestions?room_id={room_ids['Speed Dating 💕']}",
+        f"/v1/ai/match-agent/suggestions?room_id={room_ids['Speed Dating 💕']}",
         token=tokens["Bob"],
     )
     if resp.status_code == 200:
