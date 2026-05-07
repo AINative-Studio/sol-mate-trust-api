@@ -7,7 +7,7 @@ Designed to be called from a Celery beat task or cron job.
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Optional
 
 from .scoring import ReputationDimensions
 
@@ -82,5 +82,3 @@ def bulk_decay(
     return updated
 
 
-# Allow Optional to be used without importing from typing in Python 3.9
-from typing import Optional

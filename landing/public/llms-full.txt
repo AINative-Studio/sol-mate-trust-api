@@ -116,8 +116,8 @@ pip install solmate-reputation
 - Hedera HCS anchoring for tamper-proof reputation history
 - Decay: scores decay toward 0.5 without activity
 
-### x402-solana (Python)
-pip install x402-solana
+### solmate-x402 (Python)
+pip install solmate-x402
 - FastAPI middleware for Coinbase x402 HTTP-native USDC payments on Base
 - Drop-in decorator: @require_payment(amount=0.01, currency="USDC")
 

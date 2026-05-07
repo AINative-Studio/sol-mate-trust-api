@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "x402-solana"
+name = "solmate-x402"
 version = "0.1.0"
 description = "FastAPI middleware for Coinbase x402 HTTP payment protocol on Base USDC"
 readme = "README.md"
@@ -30,3 +30,9 @@ dev = ["pytest>=7", "pytest-asyncio>=0.21", "httpx"]
 [project.urls]
 Homepage = "https://github.com/AINative-Studio/sol-mate-trust-api"
 Repository = "https://github.com/AINative-Studio/sol-mate-trust-api/tree/main/packages/x402-solana"
+
+[tool.hatch.build.targets.wheel]
+packages = ["x402_solana"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

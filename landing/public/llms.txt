@@ -31,7 +31,7 @@ OpenAPI: https://sol-mate-landing-production.up.railway.app/openapi.json
 ## Open Source Packages
 - solmate-stake-sdk: pip install solmate-stake-sdk
 - solmate-reputation: pip install solmate-reputation
-- x402-solana: pip install x402-solana
+- solmate-x402: pip install solmate-x402
 
 ## Full details: /llms-full.txt
 ## Agent guide: /agent.md

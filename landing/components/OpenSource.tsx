@@ -3,21 +3,21 @@ const GITHUB_URL = "https://github.com/AINative-Studio/sol-mate-trust-api";
 const PACKAGES = [
   {
     name: "solmate-stake-sdk",
-    registries: "PyPI + npm",
+    registries: "PyPI",
     desc: "Stake-gated access control for any Solana dApp. Require USDC escrow before DMs, room entry, or any action.",
-    status: "planned",
+    status: "live",
   },
   {
     name: "solmate-reputation",
     registries: "PyPI",
     desc: "On-chain reputation decay with Hedera HCS anchoring. Portable trust scoring for Web3 social apps.",
-    status: "planned",
+    status: "live",
   },
   {
-    name: "x402-solana",
+    name: "solmate-x402",
     registries: "PyPI",
-    desc: "FastAPI middleware bridging Solana stake mechanics with Coinbase x402 HTTP payments on Base. Novel cross-chain primitive.",
-    status: "planned",
+    desc: "FastAPI middleware for Coinbase x402 HTTP-native USDC payments on Base. Drop-in dependency for any FastAPI endpoint.",
+    status: "live",
   },
 ];
 

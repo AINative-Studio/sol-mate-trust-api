@@ -20,11 +20,11 @@
       "tools": ["ReputationEngine", "ReputationDimensions", "HCSAnchor"]
     },
     {
-      "name": "x402-solana",
+      "name": "solmate-x402",
       "runtime": "python",
-      "install": "pip install x402-solana",
+      "install": "pip install solmate-x402",
       "description": "FastAPI middleware for Coinbase x402 HTTP-native USDC payments on Base",
-      "tools": ["X402Middleware", "require_payment"]
+      "tools": ["X402Config", "require_x402_payment", "x402_exception_handler"]
     }
   ],
   "api": {

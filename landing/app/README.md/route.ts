@@ -21,7 +21,7 @@ Docs: https://sol-mate-trust-api-production.up.railway.app/docs
 
 - \`pip install solmate-stake-sdk\` — StakeGate, SlashingPolicy
 - \`pip install solmate-reputation\` — ReputationEngine, Hedera HCS
-- \`pip install x402-solana\` — Coinbase x402 USDC payments
+- \`pip install solmate-x402\` — Coinbase x402 USDC payments
 
 ## Agent Discovery
 

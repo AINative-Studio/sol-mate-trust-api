@@ -46,7 +46,7 @@ GET  /api/v1/nfts/moments          List Moment NFTs
 ```bash
 pip install solmate-stake-sdk
 pip install solmate-reputation
-pip install x402-solana
+pip install solmate-x402
 ```
 
 ## Full details: /llms-full.txt

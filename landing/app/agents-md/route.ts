@@ -41,7 +41,7 @@ Sol Mate uses wallet-signature JWT authentication:
 \`\`\`bash
 pip install solmate-stake-sdk    # StakeGate, SlashingPolicy
 pip install solmate-reputation   # ReputationEngine, Hedera HCS anchoring
-pip install x402-solana          # Coinbase x402 USDC payment middleware
+pip install solmate-x402         # Coinbase x402 USDC payment middleware
 \`\`\`
 
 ## Full Reference

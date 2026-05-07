@@ -25,14 +25,15 @@ Tools:
   - HCSAnchor: tamper-proof Hedera Consensus Service anchoring
 Repo: https://github.com/AINative-Studio/sol-mate-trust-api/tree/main/packages/solmate-reputation
 
-x402-solana
-Install: pip install x402-solana
+solmate-x402
+Install: pip install solmate-x402
 Version: 0.1.0
 Description: FastAPI middleware for Coinbase x402 HTTP-native USDC payments on Base
 Tools:
-  - X402Middleware: ASGI middleware — returns HTTP 402 when payment required
-  - require_payment: decorator for route-level payment enforcement
-  - Network: Base mainnet, currency: USDC
+  - X402Config: configure pay-to address, amount, network, and timeout
+  - require_x402_payment: FastAPI dependency for route-level payment enforcement
+  - x402_exception_handler: register with app.add_exception_handler()
+  - Network: Base mainnet, currency: USDC, graceful degradation when facilitator unreachable
 Repo: https://github.com/AINative-Studio/sol-mate-trust-api/tree/main/packages/x402-solana
 
 ## API
