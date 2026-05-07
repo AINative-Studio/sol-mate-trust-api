@@ -1,5 +1,12 @@
 # Sol Mate — Trust-Based Social App on Solana
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-324%20passing-brightgreen)](backend/tests/)
+[![Coverage](https://img.shields.io/badge/coverage-94%25-brightgreen)](backend/)
+[![Deployed](https://img.shields.io/badge/API-live%20on%20Railway-blue)](https://sol-mate-trust-api-production.up.railway.app/health)
+
+> **Submission description (≤300 chars):** Sol Mate — stake USDC to DM, match, and meet. No-shows and harassment get slashed on Solana. AI matchmaking, GPS attestation, HCS audit trail, and Coinbase x402 payments. Skin in the game replaces swipe culture.
+
 **Sol Mate is a stake-to-interact social app where skin-in-the-game replaces swipe culture.**
 
 Users stake USDC to enter rooms, request matches, and unlock DMs. Genuine meetups release the stake back. No-shows and harassment get slashed. An AI match agent surfaces compatible people. Every safety decision is anchored on Hedera HCS for immutable auditability.
@@ -175,6 +182,22 @@ The Anchor escrow program is deployed and verified on Solana devnet. Every stake
 cd solana
 anchor deploy --provider.cluster devnet
 ```
+
+---
+
+## Open Source Strategy
+
+Sol Mate is MIT licensed and built to be reused. The three primitives at its core are being extracted as standalone packages for the Solana/Web3 ecosystem:
+
+| Package | What it does | Planned registry |
+|---------|-------------|-----------------|
+| **`solmate-stake-sdk`** | Stake-gated access control — any Solana dApp can require a USDC stake before a DM, room entry, or action | PyPI + npm |
+| **`solmate-reputation`** | On-chain reputation decay with Hedera HCS audit anchoring — portable trust scoring for social dApps | PyPI |
+| **`x402-solana`** | FastAPI middleware bridging Solana stake mechanics with Coinbase x402 HTTP payments on Base — novel cross-chain primitive | PyPI |
+
+These packages are planned for extraction post-hackathon. The full protocol design and interfaces are already implemented in this repo — see `backend/app/services/solana_service.py`, `backend/app/services/social_reputation_service.py`, and `backend/app/middleware/x402_payment.py`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to get involved.
 
 ---
 

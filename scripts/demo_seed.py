@@ -447,8 +447,8 @@ def main():
     parser = argparse.ArgumentParser(description="Sol Mate demo seed script")
     parser.add_argument(
         "--base-url",
-        default="http://localhost:8000",
-        help="Sol Mate API base URL (default: http://localhost:8000)",
+        default="https://sol-mate-trust-api-production.up.railway.app",
+        help="Sol Mate API base URL (default: live Railway deployment)",
     )
     parser.add_argument(
         "--output-json",
