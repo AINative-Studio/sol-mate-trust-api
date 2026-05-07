@@ -307,7 +307,7 @@ def seed(api: APIClient):
 
     # ── 7. Create a match (Alice requests Bob) ───────────────────────────────
     section("7. Creating Match: Alice → Bob")
-    resp = api.post("/v1/matches", {
+    resp = api.post("/v1/matches/request", {
         "initiator_persona_id": persona_ids["Alice"],
         "target_persona_id": persona_ids["Bob"],
         "room_id": room_ids["Speed Dating 💕"],
@@ -337,7 +337,8 @@ def seed(api: APIClient):
             ("Bob", "I'll be there!"),
         ]
         for sender, text in msgs:
-            resp = api.post(f"/v1/matches/{match_id}/messages", {
+            resp = api.post("/v1/messages", {
+                "match_id": match_id,
                 "content": text,
                 "sender_persona_id": persona_ids[sender],
             }, token=tokens[sender])
@@ -350,7 +351,7 @@ def seed(api: APIClient):
     section("9. Meetup Attestation")
     if match_id:
         # Alice attests
-        resp = api.post("/v1/attestations", {
+        resp = api.post("/v1/attestations/meetup/initiate", {
             "match_id": match_id,
             "persona_id": persona_ids["Alice"],
             "met_in_person": True,
@@ -363,7 +364,7 @@ def seed(api: APIClient):
             warn(f"Alice attestation returned {resp.status_code}: {resp.text[:100]}")
 
         # Bob attests
-        resp = api.post("/v1/attestations", {
+        resp = api.post("/v1/attestations/meetup/initiate", {
             "match_id": match_id,
             "persona_id": persona_ids["Bob"],
             "met_in_person": True,
@@ -389,7 +390,7 @@ def seed(api: APIClient):
         ok("Dan joined Social Lounge")
 
     # Carol files harassment report
-    resp = api.post("/v1/safety/reports", {
+    resp = api.post("/v1/safety/report", {
         "reported_persona_id": persona_ids["Dan"],
         "category": "harassment",
         "description": "Sent unsolicited messages after I said no.",
@@ -404,7 +405,7 @@ def seed(api: APIClient):
     # ── 11. Check reputation scores ──────────────────────────────────────────
     section("11. Reputation Scores")
     for name in ["Alice", "Bob", "Carol"]:
-        resp = api.get(f"/v1/reputation/{user_ids[name]}", token=tokens[name])
+        resp = api.get(f"/v1/reputation/persona/{persona_ids[name]}", token=tokens[name])
         if resp.status_code == 200:
             score = resp.json()
             total = score.get("trust_score", score.get("overall", "N/A"))
