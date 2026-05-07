@@ -194,7 +194,7 @@ def seed(api: APIClient):
         wallets[u["name"]] = (wallet_addr, keypair)
 
         # Get challenge nonce
-        resp = api.post("/v1/users/challenge", {"wallet_address": wallet_addr})
+        resp = api.post(f"/v1/users/challenge?wallet_address={wallet_addr}")
         data = api.require(resp, 200, f"challenge/{u['name']}")
         nonce = data["nonce"]
 
