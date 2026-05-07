@@ -3,18 +3,24 @@ const GITHUB_URL = "https://github.com/AINative-Studio/sol-mate-trust-api";
 const PACKAGES = [
   {
     name: "solmate-stake-sdk",
+    install: "pip install solmate-stake-sdk",
+    pypiUrl: "https://pypi.org/project/solmate-stake-sdk/",
     registries: "PyPI",
     desc: "Stake-gated access control for any Solana dApp. Require USDC escrow before DMs, room entry, or any action.",
     status: "live",
   },
   {
     name: "solmate-reputation",
+    install: "pip install solmate-reputation",
+    pypiUrl: "https://pypi.org/project/solmate-reputation/",
     registries: "PyPI",
-    desc: "On-chain reputation decay with Hedera HCS anchoring. Portable trust scoring for Web3 social apps.",
+    desc: "5-dimension reputation engine with time decay and Hedera HCS anchoring. Portable trust scoring for Web3 social apps.",
     status: "live",
   },
   {
     name: "solmate-x402",
+    install: "pip install solmate-x402",
+    pypiUrl: "https://pypi.org/project/solmate-x402/",
     registries: "PyPI",
     desc: "FastAPI middleware for Coinbase x402 HTTP-native USDC payments on Base. Drop-in dependency for any FastAPI endpoint.",
     status: "live",
@@ -77,26 +83,43 @@ export default function OpenSource() {
           ))}
         </div>
 
-        {/* Planned packages */}
+        {/* Published packages */}
         <h3 className="text-sm font-semibold text-white/40 uppercase tracking-widest mb-4">
-          Planned Packages (post-hackathon)
+          Published Packages
         </h3>
         <div className="grid md:grid-cols-3 gap-5 mb-12">
           {PACKAGES.map((pkg) => (
             <div
               key={pkg.name}
-              className="p-5 rounded-xl bg-brand-card border border-brand-border"
+              className="p-5 rounded-xl bg-brand-card border border-brand-border hover:border-brand-violet/40 transition-colors"
             >
               <div className="flex items-start justify-between mb-2">
-                <code className="text-sm font-mono text-violet-300">
+                <a
+                  href={pkg.pypiUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-mono text-violet-300 hover:text-violet-200 transition-colors"
+                >
                   {pkg.name}
-                </code>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/25">
+                </a>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/25">
                   {pkg.status}
                 </span>
               </div>
-              <div className="text-xs text-white/40 mb-3">{pkg.registries}</div>
-              <p className="text-white/55 text-sm leading-relaxed">{pkg.desc}</p>
+              <div className="text-xs text-white/40 mb-3">{pkg.registries} · v0.1.0</div>
+              <p className="text-white/55 text-sm leading-relaxed mb-4">{pkg.desc}</p>
+              <div className="flex items-center gap-2 bg-black/30 rounded-lg px-3 py-2 border border-white/10">
+                <code className="text-xs text-green-300 font-mono flex-1 truncate">{pkg.install}</code>
+                <a
+                  href={pkg.pypiUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-white/40 hover:text-white/70 transition-colors shrink-0"
+                  aria-label={`View ${pkg.name} on PyPI`}
+                >
+                  PyPI ↗
+                </a>
+              </div>
             </div>
           ))}
         </div>

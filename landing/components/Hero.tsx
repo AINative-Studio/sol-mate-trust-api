@@ -5,7 +5,7 @@ const API_URL = "https://sol-mate-trust-api-production.up.railway.app";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden bg-hero-gradient">
+    <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-16 overflow-hidden bg-hero-gradient">
       {/* Background orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-violet/20 rounded-full blur-3xl pointer-events-none animate-pulse" />
       <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-brand-pink/15 rounded-full blur-3xl pointer-events-none" />

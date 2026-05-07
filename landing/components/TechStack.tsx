@@ -12,18 +12,18 @@ const STACK = [
     category: "Backend",
     items: [
       { name: "FastAPI", desc: "27 service classes, 40+ endpoints" },
-      { name: "SQLAlchemy 2.0", desc: "13 ORM models, PgBouncer pooling" },
+      { name: "SQLAlchemy 2.0", desc: "13 ORM models, PgBouncer connection pooling" },
       { name: "Celery + Redis", desc: "Hourly slash eval, match expiry, decay" },
-      { name: "PostgreSQL", desc: "Shared Railway instance (sm_ prefix)" },
+      { name: "PostgreSQL", desc: "14 tables, sm_ prefix, 324 tests passing" },
     ],
   },
   {
     category: "AI / Infra",
     items: [
-      { name: "Claude AI", desc: "Personalized intro generation" },
-      { name: "ZeroDB", desc: "Vector preference memory for matching" },
+      { name: "llama-3.3-70b", desc: "Personalized intro generation via AINative" },
+      { name: "ZeroDB", desc: "768-dim BAAI/bge vectors for preference matching" },
       { name: "Circle USDC", desc: "Escrow funding, refund, slash" },
-      { name: "Railway", desc: "Production API deployment" },
+      { name: "AINative Studio", desc: "LLM inference + embedding API" },
     ],
   },
   {
