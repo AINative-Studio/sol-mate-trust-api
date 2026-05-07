@@ -5,8 +5,10 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM python:3.12-slim AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
+COPY --from=builder /app/package*.json ./
+RUN npm ci --omit=dev
 COPY --from=builder /app/out ./out
 EXPOSE 3000
-CMD ["sh", "-c", "python3 -m http.server ${PORT:-3000} --bind 0.0.0.0 --directory out"]
+CMD ["sh", "-c", "node node_modules/.bin/serve out -l $PORT"]
