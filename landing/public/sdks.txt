@@ -1,0 +1,41 @@
+# Sol Mate — SDK & Package Directory
+# https://sol-mate-landing-production.up.railway.app/sdks.txt
+
+## Python Packages
+
+solmate-stake-sdk
+Install: pip install solmate-stake-sdk
+Version: 0.1.0
+Description: Stake mechanics SDK for Sol Mate and compatible dApps
+Tools:
+  - StakeGate: enforce stake requirements on any action
+  - StakeRecord: track stake history, outcomes, and slashing events
+  - SlashingPolicy: configurable slash percentages with escalating no-show multiplier
+  - SlashReason: NO_SHOW, HARASSMENT, FAKE_PROFILE, CONSENT_VIOLATION, SPAM, PAYMENT_FRAUD
+Repo: https://github.com/AINative-Studio/sol-mate-trust-api/tree/main/packages/solmate-stake-sdk
+
+solmate-reputation
+Install: pip install solmate-reputation
+Version: 0.1.0
+Description: 5-dimension reputation engine for stake-to-interact social platforms
+Tools:
+  - ReputationEngine: calculate and update scores across 5 dimensions
+  - Dimensions: reliability, safety, communication, punctuality, authenticity
+  - Decay: scores decay toward 0.5 without activity
+  - HCSAnchor: tamper-proof Hedera Consensus Service anchoring
+Repo: https://github.com/AINative-Studio/sol-mate-trust-api/tree/main/packages/solmate-reputation
+
+x402-solana
+Install: pip install x402-solana
+Version: 0.1.0
+Description: FastAPI middleware for Coinbase x402 HTTP-native USDC payments on Base
+Tools:
+  - X402Middleware: ASGI middleware — returns HTTP 402 when payment required
+  - require_payment: decorator for route-level payment enforcement
+  - Network: Base mainnet, currency: USDC
+Repo: https://github.com/AINative-Studio/sol-mate-trust-api/tree/main/packages/x402-solana
+
+## API
+Base URL: https://sol-mate-trust-api-production.up.railway.app
+Free tier: Yes (devnet)
+Auth: Wallet signature → JWT
