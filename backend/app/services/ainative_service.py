@@ -266,7 +266,7 @@ def moderate_message(text: str) -> dict:
         resp = httpx.post(
             f"{_BASE}/api/v1/chat/completions",
             json={
-                "model": "llama-3.3-8b-instruct",
+                "model": "llama-3.1-8b",
                 "max_tokens": 20,
                 "temperature": 0.0,
                 "messages": [{
