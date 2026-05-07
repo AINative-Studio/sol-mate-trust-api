@@ -8,6 +8,7 @@ from .message import MessageCreate, MessageResponse
 from .attestation import AttestationInitiate, AttestationConfirm, AttestationResponse
 from .reputation import ReputationResponse, FeedbackCreate
 from .safety import ReportCreate, ReportResponse, BlockCreate
+from .moment_nft import MintMomentRequest, MomentNFTResponse, MomentNFTListResponse
 
 __all__ = [
     "UserOnboard", "UserResponse", "UserUpdate",
@@ -20,4 +21,5 @@ __all__ = [
     "AttestationInitiate", "AttestationConfirm", "AttestationResponse",
     "ReputationResponse", "FeedbackCreate",
     "ReportCreate", "ReportResponse", "BlockCreate",
+    "MintMomentRequest", "MomentNFTResponse", "MomentNFTListResponse",
 ]
