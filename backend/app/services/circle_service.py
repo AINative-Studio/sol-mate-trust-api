@@ -28,8 +28,12 @@ def _env() -> str:
     return os.getenv("CIRCLE_ENVIRONMENT", "sandbox")
 
 
+def _entity_secret() -> Optional[str]:
+    return os.getenv("CIRCLE_ENTITY_SECRET")
+
+
 def _is_configured() -> bool:
-    return bool(_api_key())
+    return bool(_api_key()) and bool(_entity_secret())
 
 
 @dataclass
