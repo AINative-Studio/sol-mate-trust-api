@@ -340,7 +340,6 @@ def seed(api: APIClient):
             resp = api.post("/v1/messages", {
                 "match_id": match_id,
                 "content": text,
-                "sender_persona_id": persona_ids[sender],
             }, token=tokens[sender])
             if resp.status_code == 201:
                 ok(f"{sender}: \"{text[:50]}\"")
@@ -353,12 +352,13 @@ def seed(api: APIClient):
         # Alice attests
         resp = api.post("/v1/attestations/meetup/initiate", {
             "match_id": match_id,
-            "persona_id": persona_ids["Alice"],
-            "met_in_person": True,
-            "gps_lat": 25.7617,
-            "gps_lng": -80.1918,
+            "method": "gps_checkin",
+            "latitude": 25.7617,
+            "longitude": -80.1918,
         }, token=tokens["Alice"])
+        attestation_id = None
         if resp.status_code == 201:
+            attestation_id = resp.json().get("id")
             ok("Alice attested meetup (GPS verified)")
         else:
             warn(f"Alice attestation returned {resp.status_code}: {resp.text[:100]}")
@@ -366,10 +366,9 @@ def seed(api: APIClient):
         # Bob attests
         resp = api.post("/v1/attestations/meetup/initiate", {
             "match_id": match_id,
-            "persona_id": persona_ids["Bob"],
-            "met_in_person": True,
-            "gps_lat": 25.7618,
-            "gps_lng": -80.1917,
+            "method": "gps_checkin",
+            "latitude": 25.7618,
+            "longitude": -80.1917,
         }, token=tokens["Bob"])
         if resp.status_code == 201:
             ok("Bob attested meetup (GPS verified)")
@@ -391,9 +390,9 @@ def seed(api: APIClient):
 
     # Carol files harassment report
     resp = api.post("/v1/safety/report", {
-        "reported_persona_id": persona_ids["Dan"],
-        "category": "harassment",
-        "description": "Sent unsolicited messages after I said no.",
+        "reported_user_id": user_ids["Dan"],
+        "report_type": "harassment",
+        "description": "Sent unsolicited messages after I said no. He persisted three times.",
     }, token=tokens["Carol"])
     if resp.status_code == 201:
         report_data = resp.json()
