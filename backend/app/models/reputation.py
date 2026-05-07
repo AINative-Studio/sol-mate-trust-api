@@ -24,7 +24,7 @@ class ReputationEventType(str, enum.Enum):
 
 
 class ReputationScore(Base):
-    __tablename__ = "reputation_scores"
+    __tablename__ = "sm_reputation_scores"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
@@ -44,7 +44,7 @@ class ReputationScore(Base):
 
 
 class ReputationEvent(Base):
-    __tablename__ = "reputation_events"
+    __tablename__ = "sm_reputation_events"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)

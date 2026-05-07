@@ -27,7 +27,7 @@ class ReportStatus(str, enum.Enum):
 
 
 class Report(Base):
-    __tablename__ = "reports"
+    __tablename__ = "sm_reports"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     reporter_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

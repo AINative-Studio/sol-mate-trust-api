@@ -8,7 +8,7 @@ from ..core.database import Base
 
 
 class Block(Base):
-    __tablename__ = "blocks"
+    __tablename__ = "sm_blocks"
     __table_args__ = (UniqueConstraint("blocker_id", "blocked_id", name="uq_block"),)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

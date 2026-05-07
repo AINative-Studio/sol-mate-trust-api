@@ -26,7 +26,7 @@ class AttestationStatus(str, enum.Enum):
 
 
 class MeetupAttestation(Base):
-    __tablename__ = "meetup_attestations"
+    __tablename__ = "sm_meetup_attestations"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     match_id = Column(UUID(as_uuid=True), ForeignKey("matches.id", ondelete="CASCADE"), nullable=False)

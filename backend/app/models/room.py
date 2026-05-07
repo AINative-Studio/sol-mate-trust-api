@@ -25,7 +25,7 @@ class RoomPrivacyLevel(str, enum.Enum):
 
 
 class Room(Base):
-    __tablename__ = "rooms"
+    __tablename__ = "sm_rooms"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(128), nullable=False)

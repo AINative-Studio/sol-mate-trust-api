@@ -23,7 +23,7 @@ class PrivacyMode(str, enum.Enum):
 
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "sm_users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     wallet_address = Column(String, unique=True, nullable=False, index=True)

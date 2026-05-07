@@ -24,7 +24,7 @@ class EscrowType(str, enum.Enum):
 
 
 class Escrow(Base):
-    __tablename__ = "escrows"
+    __tablename__ = "sm_escrows"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     type = Column(SAEnum(EscrowType), nullable=False)

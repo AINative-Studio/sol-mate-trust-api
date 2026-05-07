@@ -16,7 +16,7 @@ class MessageType(str, enum.Enum):
 
 
 class Message(Base):
-    __tablename__ = "messages"
+    __tablename__ = "sm_messages"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     match_id = Column(UUID(as_uuid=True), ForeignKey("matches.id", ondelete="CASCADE"), nullable=False)

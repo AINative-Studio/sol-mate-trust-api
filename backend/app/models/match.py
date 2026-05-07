@@ -24,7 +24,7 @@ class ConsentState(str, enum.Enum):
 
 
 class Match(Base):
-    __tablename__ = "matches"
+    __tablename__ = "sm_matches"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     room_id = Column(UUID(as_uuid=True), ForeignKey("rooms.id", ondelete="SET NULL"), nullable=True)
