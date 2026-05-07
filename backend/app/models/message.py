@@ -21,7 +21,7 @@ class Message(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     match_id = Column(UUID(as_uuid=True), ForeignKey("sm_matches.id", ondelete="CASCADE"), nullable=False)
     sender_persona_id = Column(UUID(as_uuid=True), ForeignKey("sm_personas.id", ondelete="SET NULL"), nullable=True)
-    type = Column(SAEnum(MessageType), default=MessageType.TEXT, nullable=False)
+    type = Column(SAEnum(MessageType, values_callable=lambda x: [e.value for e in x]), default=MessageType.TEXT, nullable=False)
     content = Column(Text, nullable=False)
     is_encrypted = Column(Boolean, default=True, nullable=False)
     stake_id = Column(UUID(as_uuid=True), ForeignKey("sm_stakes.id", ondelete="SET NULL"), nullable=True)
