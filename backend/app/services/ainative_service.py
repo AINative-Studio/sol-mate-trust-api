@@ -54,7 +54,7 @@ def generate_match_intro(
     context: Optional[str] = None,
 ) -> str:
     """
-    Generate a personalised opening message via AINative LLM (claude-sonnet-4.5).
+    Generate a personalised opening message via AINative LLM (llama-3.3-70b).
     Falls back to a deterministic template if the API is unavailable.
     """
     if not _is_configured():
@@ -78,7 +78,7 @@ def generate_match_intro(
         resp = httpx.post(
             f"{_BASE}/api/v1/chat/completions",
             json={
-                "model": "claude-sonnet-4.5",
+                "model": "llama-3.3-70b",
                 "max_tokens": 120,
                 "temperature": 0.75,
                 "messages": [{"role": "user", "content": user_prompt}],
