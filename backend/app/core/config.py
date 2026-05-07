@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     # Solana
     SOLANA_RPC_URL: str = "https://api.devnet.solana.com"
     SOLANA_NETWORK: str = "devnet"
+    SOLANA_PROGRAM_ID: str = "GihCjDJeAwbNtr826dEAfQFp4GAVBgHWLxDf2sqsQLif"
+    SOLANA_KEYPAIR_PATH: str = "~/.config/solana/id.json"
 
     # Circle (USDC payments / escrow)
     CIRCLE_API_KEY: Optional[str] = None
@@ -43,6 +45,10 @@ class Settings(BaseSettings):
     # AI / LLM
     OPENAI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
+
+    # Coinbase x402 payment protocol (Base)
+    X402_ENABLED: bool = False
+    COINBASE_PAYMENT_ADDRESS: str = ""
 
     # Safety
     MIN_STAKE_DM_USDC: float = 1.0

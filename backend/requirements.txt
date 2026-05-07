@@ -25,3 +25,5 @@ openai==1.54.0
 anthropic==0.39.0
 # Async
 aiohttp==3.11.2
+# Coinbase x402 HTTP payment protocol (Base/EVM)
+x402[fastapi]==2.9.0

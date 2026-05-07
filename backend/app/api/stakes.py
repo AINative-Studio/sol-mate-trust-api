@@ -1,24 +1,32 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import List
 from ..core.database import get_db
 from ..core.auth import get_current_user
+from ..core.config import settings
 from ..models.user import User
+from ..models.stake import StakeType
 from ..schemas.stake import StakeCreate, StakeResponse, StakeSlash
 from ..schemas.escrow import EscrowCreate, EscrowResponse, EscrowDispute
 from ..services.stake_service import StakeService
 from ..services.escrow_service import EscrowService
+from ..middleware.x402_payment import require_x402_payment
 
 router = APIRouter(tags=["stakes"])
 
 
 @router.post("/v1/stakes", response_model=StakeResponse, status_code=201)
 async def create_stake(
+    request: Request,
     payload: StakeCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Apply x402 payment check for DM unlock when enabled
+    if settings.X402_ENABLED and payload.stake_type == StakeType.DM:
+        await require_x402_payment(request)
+
     svc = StakeService(db)
     return svc.create(current_user, payload)
 

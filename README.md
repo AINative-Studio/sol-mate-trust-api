@@ -208,7 +208,46 @@ pytest tests/ -v --cov=app --cov-report=term-missing
 | Track | Prize | Our Angle |
 |-------|-------|-----------|
 | **Solana** | $30k $SKR | On-chain stake/escrow Anchor program; Ed25519 wallet auth |
-| **Coinbase + AWS** | $5k + $40k AWS | Circle USDC escrow; X402 stake transactions |
+| **Coinbase + AWS** | $10k + $80k AWS | Coinbase x402 payment middleware on Base; Circle USDC escrow |
+
+---
+
+## Integrations
+
+### Coinbase x402 — HTTP Payment Protocol (Base)
+
+Sol Mate implements the [x402 HTTP payment protocol](https://x402.org) on Base mainnet for DM unlock staking. This qualifies for the **Agentic track** ($10K + $80K AWS).
+
+**How it works:**
+
+```
+Client → POST /api/v1/stakes (stake_type=dm, no payment)
+Server → 402 Payment Required + payment requirements (Base USDC)
+Client → pays 0.5 USDC on Base via Coinbase facilitator
+Client → POST /api/v1/stakes (X-Payment: <proof>)
+Server → verifies proof via https://x402.org/facilitator/verify
+Server → 201 Created (stake unlocked)
+```
+
+**Payment details:**
+- Network: Base mainnet
+- Asset: USDC (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`)
+- Amount: 0.5 USDC (500,000 micro-units, 6 decimals)
+- Facilitator: Coinbase public facilitator (`https://x402.org/facilitator`)
+
+**Enable in `.env`:**
+
+```env
+X402_ENABLED=true
+COINBASE_PAYMENT_ADDRESS=0xYourBaseWalletAddress
+```
+
+**Disabled by default** — all existing tests pass without any x402 configuration. When the facilitator is unreachable, requests are allowed through (graceful degradation).
+
+**Implementation:**
+- Middleware: `backend/app/middleware/x402_payment.py`
+- Dependency: `require_x402_payment` (called inline for `stake_type=dm` only)
+- Package: `x402[fastapi]==2.9.0`
 
 ---
 
@@ -358,3 +397,5 @@ REDIS_URL=redis://localhost:6379/0
 | `MIN_STAKE_ROOM_USDC` | No | Min USDC stake for room entry (default: 1.0) |
 | `MIN_STAKE_MEETUP_USDC` | No | Min USDC stake for meetup request (default: 2.0) |
 | `MIN_STAKE_DM_USDC` | No | Min USDC stake to unlock DMs (default: 0.5) |
+| `X402_ENABLED` | No | Enable Coinbase x402 payment gate on DM unlock (default: false) |
+| `COINBASE_PAYMENT_ADDRESS` | No | Base wallet address to receive x402 USDC payments |

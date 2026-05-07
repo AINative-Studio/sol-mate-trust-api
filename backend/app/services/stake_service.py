@@ -11,6 +11,7 @@ from ..core.config import settings
 from ..core.errors import StakeNotFoundError, InsufficientStakeError
 from .circle_service import CircleService
 from .hcs_anchoring_service import HCSAnchoringService
+from .solana_service import SolanaService
 
 
 class StakeService:
@@ -48,6 +49,19 @@ class StakeService:
             amount_usdc=payload.amount_usdc,
             stake_id=stake.id,
         )
+        # Record stake on-chain via SPL Memo (devnet).  Non-fatal — if Solana
+        # is unavailable the DB record is already committed and tx_hash stays
+        # as whatever the caller supplied (or None).
+        sol_sig = SolanaService().submit_stake_memo(
+            stake_id=stake.id,
+            user_wallet=getattr(user, "wallet_address", None),
+            amount_usdc=payload.amount_usdc,
+            stake_type=payload.stake_type.value,
+        )
+        if sol_sig:
+            stake.tx_hash = sol_sig
+            self.db.commit()
+            self.db.refresh(stake)
         return stake
 
     def get_user_stakes(self, user_id: UUID) -> List[Stake]:
@@ -77,6 +91,13 @@ class StakeService:
             decision="refunded",
             amount_usdc=stake.amount_usdc,
         )
+        sol_sig = SolanaService().submit_refund_memo(
+            stake_id=stake.id,
+            user_wallet=getattr(user, "wallet_address", None),
+            amount_usdc=stake.amount_usdc,
+        )
+        if sol_sig:
+            stake.tx_hash = sol_sig
         self.db.commit()
         self.db.refresh(stake)
         return stake
@@ -100,6 +121,14 @@ class StakeService:
             amount_usdc=stake.amount_usdc,
             slash_reason=reason,
         )
+        sol_sig = SolanaService().submit_slash_memo(
+            stake_id=stake.id,
+            user_wallet=getattr(stake, "user_wallet_address", None),
+            amount_usdc=stake.amount_usdc,
+            reason=reason,
+        )
+        if sol_sig:
+            stake.tx_hash = sol_sig
         self.db.commit()
         self.db.refresh(stake)
         return stake

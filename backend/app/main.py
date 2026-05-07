@@ -1,9 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from .core.config import settings
 from .core.database import engine, Base
+from .middleware.x402_payment import _X402Exception
 
 # Import all models to ensure they're registered
 from .models import *  # noqa
@@ -35,6 +36,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(_X402Exception)
+async def x402_exception_handler(request: Request, exc: _X402Exception):
+    """Return the pre-built 402 JSONResponse from the x402 payment dependency."""
+    return exc.response
 
 # Register routers
 app.include_router(users.router)

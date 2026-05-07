@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
@@ -25,6 +25,15 @@ class StakeResponse(BaseModel):
     expires_at: Optional[datetime]
     created_at: datetime
     resolved_at: Optional[datetime]
+    explorer_url: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _set_explorer_url(self) -> "StakeResponse":
+        if self.tx_hash:
+            self.explorer_url = (
+                f"https://explorer.solana.com/tx/{self.tx_hash}?cluster=devnet"
+            )
+        return self
 
     class Config:
         from_attributes = True
