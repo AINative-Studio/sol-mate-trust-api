@@ -162,16 +162,18 @@ python3 scripts/demo_seed.py --base-url http://localhost:8000
 
 ---
 
-## Deploy Solana Program to Devnet
+## Solana Program — Live on Devnet
+
+**Program ID:** `GihCjDJeAwbNtr826dEAfQFp4GAVBgHWLxDf2sqsQLif`
+
+**Deploy tx:** [`2UtFRJPh...`](https://explorer.solana.com/tx/2UtFRJPhLfn2BHn2A7PMo3CzYKSfyhHo5iV4FjUu96ArbporeDPJ6oUsQKXE4abF8q7JGr2iHD4LWcsjA2dJN5gJ?cluster=devnet)
+
+The Anchor escrow program is deployed and verified on Solana devnet. Every stake, refund, and slash from the API submits a transaction to this program and returns an Explorer link.
 
 ```bash
-# Install Solana toolchain
-sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
-cargo install --git https://github.com/coral-xyz/anchor anchor-cli --locked
-
-# Deploy
+# Re-deploy (if needed)
 cd solana
-bash scripts/deploy_devnet.sh
+anchor deploy --provider.cluster devnet
 ```
 
 ---
@@ -183,7 +185,7 @@ cd backend
 pytest tests/ -v --cov=app --cov-report=term-missing
 ```
 
-**198 tests, 87% coverage.**
+**324 tests, 94% coverage.**
 
 | Area | Tests | Coverage |
 |------|-------|----------|
