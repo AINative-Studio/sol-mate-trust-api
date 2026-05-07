@@ -64,11 +64,13 @@ class TestCircleServiceWithAPI:
     def setup_method(self):
         import os
         os.environ["CIRCLE_API_KEY"] = "test-api-key"
+        os.environ["CIRCLE_ENTITY_SECRET"] = "test-entity-secret"
         os.environ["CIRCLE_ENVIRONMENT"] = "sandbox"
 
     def teardown_method(self):
         import os
         os.environ.pop("CIRCLE_API_KEY", None)
+        os.environ.pop("CIRCLE_ENTITY_SECRET", None)
         os.environ.pop("CIRCLE_ENVIRONMENT", None)
 
     def _mock_response(self, status_code: int, json_body: dict):
