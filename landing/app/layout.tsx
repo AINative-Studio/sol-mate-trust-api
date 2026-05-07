@@ -30,6 +30,9 @@ export const metadata: Metadata = {
       "Stake USDC to DM, match, and meet. No-shows get slashed. Genuine connections get rewarded.",
   },
   manifest: "/manifest.json",
+};
+
+export const viewport = {
   themeColor: "#7C3AED",
 };
 
