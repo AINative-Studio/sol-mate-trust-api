@@ -22,25 +22,27 @@ def is_ainative_api_key(token: str) -> bool:
     return len(token) < 100 and token.startswith(AINATIVE_KEY_PREFIXES)
 
 
-async def _validate_ainative_key(api_key: str) -> Optional[dict]:
-    """Validate an AINative API key against the platform and return user context."""
+async def _validate_ainative_key(api_key: str) -> bool:
+    """Validate an AINative API key against the platform.
+
+    Uses /api/v1/api-keys as the validation probe — returns 200 only for valid active keys.
+    """
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             resp = await client.get(
-                f"{settings.AINATIVE_API_URL}/api/v1/auth/me",
+                f"{settings.AINATIVE_API_URL}/api/v1/api-keys",
                 headers={"X-API-Key": api_key},
             )
-        if resp.status_code == 200:
-            return resp.json()
+        return resp.status_code == 200
     except httpx.RequestError:
-        pass
-    return None
+        return False
 
 
-def _get_or_create_platform_user(platform_user: dict, db: Session) -> User:
+def _get_or_create_platform_user(api_key: str, db: Session) -> User:
     """Get or create a Sol Mate user from AINative platform identity."""
-    platform_id = str(platform_user.get("id", ""))
-    email = platform_user.get("email", "")
+    # Derive a stable unique ID from the key itself (first 16 chars after prefix)
+    platform_id = api_key[api_key.index("_") + 1 : api_key.index("_") + 17]
+    email = None
 
     # Look up by a stable platform identifier stored in wallet_address field
     # We use "ainative:{platform_id}" as a synthetic wallet address for platform users
@@ -92,10 +94,10 @@ async def get_current_user(
         api_key = credentials.credentials
 
     if api_key and is_ainative_api_key(api_key):
-        platform_user = await _validate_ainative_key(api_key)
-        if not platform_user:
+        valid = await _validate_ainative_key(api_key)
+        if not valid:
             raise HTTPException(status_code=401, detail="Invalid AINative API key")
-        return _get_or_create_platform_user(platform_user, db)
+        return _get_or_create_platform_user(api_key, db)
 
     # --- Wallet-signature JWT auth (existing flow) ---
     if not credentials:
