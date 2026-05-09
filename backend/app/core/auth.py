@@ -26,16 +26,21 @@ async def _validate_ainative_key(api_key: str) -> bool:
     """Validate an AINative API key against the platform.
 
     Uses /api/v1/api-keys as the validation probe — returns 200 only for valid active keys.
+    Falls back to direct Railway URL if Kong is unreachable.
     """
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(
-                f"{settings.AINATIVE_API_URL}/api/v1/api-keys",
-                headers={"X-API-Key": api_key},
-            )
-        return resp.status_code == 200
-    except httpx.RequestError:
-        return False
+    urls = [
+        f"{settings.AINATIVE_API_URL}/api/v1/api-keys",
+        "https://ainative-browser-builder.up.railway.app/api/v1/api-keys",
+    ]
+    for url in urls:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(url, headers={"X-API-Key": api_key})
+            if resp.status_code == 200:
+                return True
+        except httpx.RequestError:
+            continue
+    return False
 
 
 def _get_or_create_platform_user(api_key: str, db: Session) -> User:
