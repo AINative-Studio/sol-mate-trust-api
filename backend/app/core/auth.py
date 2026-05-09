@@ -29,8 +29,9 @@ async def _validate_ainative_key(api_key: str) -> bool:
     Falls back to direct Railway URL if Kong is unreachable.
     """
     urls = [
-        f"{settings.AINATIVE_API_URL}/api/v1/api-keys",
+        "http://cody.railway.internal:8080/api/v1/api-keys",
         "https://ainative-browser-builder.up.railway.app/api/v1/api-keys",
+        f"{settings.AINATIVE_API_URL}/api/v1/api-keys",
     ]
     for url in urls:
         try:
